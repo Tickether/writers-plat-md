@@ -10,6 +10,13 @@ import {
   listItem,
   bulletList,
   orderedList,
+  italic,
+  heading,
+  hardBreak,
+  horizontalRule,
+  link,
+  strike,
+  underline
 } from "@bangle.dev/base-components";
 
 const menuKey = new PluginKey("menuKey");
@@ -22,12 +29,28 @@ export function Editor() {
       bulletList.spec(),
       orderedList.spec(),
       listItem.spec(),
+      italic.spec(),
+      heading.spec({
+        levels: [1,2,3,4,5,6]
+      }),
+      hardBreak.spec(),
+      horizontalRule.spec(),
+      link.spec(),
+      strike.spec(),
+      underline.spec(),
     ],
     plugins: () => [
       bold.plugins(),
       bulletList.plugins(),
       orderedList.plugins(),
       listItem.plugins(),
+      italic.plugins(),
+      heading.plugins(),
+      hardBreak.plugins(),
+      horizontalRule.plugins(),
+      link.plugins(),
+      strike.plugins(),
+      underline.plugins(),
       floatingMenu.plugins({
         key: menuKey,
       }),
