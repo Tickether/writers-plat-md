@@ -32,7 +32,6 @@ import {
   link,
   strike,
   underline,
-  paragraph,
   blockquote
 } from "@bangle.dev/base-components";
 import { subscript, superscript } from "@bangle.dev/text-formatting";
@@ -43,7 +42,20 @@ const menuKey = new PluginKey("menuKey");
 export function Editor() {
   const [ editor, setEditor ] = useState();
   const editorState = useEditorState({
-    initialValue: 'Hello, World!',
+    initialValue: {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: 'Hello, World!'
+            }
+          ]
+        }
+      ]
+    },
     specs: [
       bold.spec(),
       bulletList.spec(),
@@ -58,7 +70,6 @@ export function Editor() {
       link.spec(),
       strike.spec(),
       underline.spec(),
-      paragraph.spec(),
       blockquote.spec(),
       subscript.spec(),
       superscript.spec(),
@@ -75,7 +86,6 @@ export function Editor() {
       link.plugins(),
       strike.plugins(),
       underline.plugins(),
-      paragraph.plugins(),
       blockquote.plugins(),
       subscript.plugins({
         keybindings: { toggleSubscript: 'Mod-Shift-d' }
