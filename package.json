@@ -8,6 +8,7 @@
     "@bangle.dev/pm": "^0.27.6",
     "@bangle.dev/react": "^0.27.6",
     "@bangle.dev/react-menu": "^0.27.6",
+    "@bangle.dev/text-formatting": "^0.31.6",
     "@bangle.dev/tooltip": "^0.27.6",
     "@electron/remote": "^2.0.9",
     "@testing-library/jest-dom": "^5.11.4",

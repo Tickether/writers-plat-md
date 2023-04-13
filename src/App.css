@@ -1,12 +1,46 @@
 
 .bangle-editor {
-  height: 50vh;
   padding: 5px 10px;
+  overflow: scroll;
+  max-height: calc(100vh - 150px);
+  width: 70vw;
 }
 
+.editor-area {
+  grid-area: editor;
+  height: calc(100vh - 70px);
+}
 
-body {
-  height: 100vh;
+.sidebar {
+  grid-area: sidebar;
+  height: calc(100vh - 70px);
+  overflow: scroll;
+}
+
+.footer {
+  grid-area: footer;
+  max-height:10px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow: -moz-hidden-unscrollable;
+}
+
+.App {
+  height: calc(100vh-10px);
   width: 100vw;
+  display: grid;
+  grid-template-areas:
+  'sidebar editor editor editor'
+  'footer footer footer footer';
+  gap: 5px;
   background-color: lightgray;
+  padding: 10px;
+  overflow: -moz-hidden-unscrollable;
+}
+
+.App > div {
+  background-color: white;
+  padding: 10px 10px;
 }
