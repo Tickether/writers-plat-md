@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
 
 
 require('@electron/remote/main').initialize()
@@ -47,3 +47,20 @@ ipcMain.on('open-folder-dialog', (event) => {
       }
     });
 });
+
+// new custom menu template
+const customMenu = [
+    {
+        label: 'File',
+        submenu: [
+            { label: 'Open Project', accelerator: 'CmdOrCtrl+O', click: () => console.log('New file created') },
+            { label: 'New File', accelerator: 'CmdOrCtrl+N', click: () => console.log('Open file') },
+            { type: 'separator' },
+            { role: 'quit' }
+        ]
+    }
+]
+
+//init menu from custom template and set to application window
+const menu = Menu.buildFromTemplate(customMenu)
+Menu.setApplicationMenu(menu)
