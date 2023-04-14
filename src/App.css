@@ -2,19 +2,25 @@
 .bangle-editor {
   padding: 5px 10px;
   overflow: scroll;
-  max-height: calc(100vh - 150px);
+  height: calc(100vh - 110px);
   width: 70vw;
+  background-color: white;
+}
+.bangle-editor.ProseMirror-focused:focus-visible {
+  outline: none;
 }
 
 .editor-area {
   grid-area: editor;
   height: calc(100vh - 70px);
+  background-color: lightgrey;
 }
 
 .sidebar {
   grid-area: sidebar;
   height: calc(100vh - 70px);
   overflow: scroll;
+  background-color: white;
 }
 
 .footer {
@@ -41,6 +47,11 @@
 }
 
 .App > div {
-  background-color: white;
   padding: 10px 10px;
+}
+
+.front-matter-container {
+  background-color: bisque;
+  border-radius: 5px;
+  padding: 15px;
 }
