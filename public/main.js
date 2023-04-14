@@ -53,7 +53,19 @@ const customMenu = [
     {
         label: 'File',
         submenu: [
-            { label: 'Open Project', accelerator: 'CmdOrCtrl+O', click: () => console.log('New file created') },
+            { label: 'Open Project', accelerator: 'CmdOrCtrl+O', click: (menuItem, browserWindow) =>{ 
+                dialog.showOpenDialog({
+                    properties: ['openDirectory'],
+                    title: 'Select a folder foooo menu way',
+                })
+                .then((result) => {
+                if (!result.canceled && result.filePaths.length > 0) {
+                    // Send the selected folder path back to the renderer process
+                    browserWindow.webContents.send('selected-folder', result.filePaths[0]);
+                }
+                });
+                console.log(' Folder Opened') 
+            }},
             { label: 'New File', accelerator: 'CmdOrCtrl+N', click: () => console.log('Open file') },
             { type: 'separator' },
             { role: 'quit' }
