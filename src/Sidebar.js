@@ -29,13 +29,18 @@ if (!fs.existsSync(_default)) {
 
 // Template for the list of files presented in sidebar when a folder is chosen.
 export function FileListMap({ data }) {
-  return (
-    <ul className="fileList">
-      {data.map((item, index) => (
-        <li key={index}>{item.name}</li>
-      ))}
-    </ul>
-  )
+  const renderItems = (items) =>
+    items.map((item, index) => (
+      <li key={index} className={item.directory ? "folder" : "file"}>
+        <span>{item.name}</span>
+        {item.directory && (
+          <ul>
+            {renderItems(item.children)}
+          </ul>
+        )}
+      </li>
+    ));
+  return renderItems(data);
 }
 
 
@@ -109,7 +114,9 @@ function Sidebar() {
   return (
     <>
     {path === _default ? <button onClick={handleOpenFolder}>open me darnit</button> : 
-    <FileListMap data={files} />
+    <ul className="fileList">
+      <FileListMap data={files} />
+    </ul>
     }
     </>
   )

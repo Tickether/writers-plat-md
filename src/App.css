@@ -1,4 +1,4 @@
-
+/* Area where markdown is written */
 .bangle-editor {
   padding: 5px 10px;
   overflow: scroll;
@@ -6,16 +6,25 @@
   width: 70vw;
   background-color: white;
 }
+
 .bangle-editor.ProseMirror-focused:focus-visible {
   outline: none;
 }
 
+.front-matter-container {
+  background-color: bisque;
+  border-radius: 5px;
+  padding: 15px;
+}
+
+/* Area that contains the bangle editor and static menu */
 .editor-area {
   grid-area: editor;
   height: calc(100vh - 70px);
   background-color: lightgrey;
 }
 
+/* Area that contains file list */
 .sidebar {
   grid-area: sidebar;
   height: calc(100vh - 70px);
@@ -23,6 +32,7 @@
   background-color: white;
 }
 
+/* Footer area */
 .footer {
   grid-area: footer;
   max-height:10px;
@@ -33,6 +43,7 @@
   overflow: -moz-hidden-unscrollable;
 }
 
+/* App as a whole */
 .App {
   height: calc(100vh-10px);
   width: 100vw;
@@ -48,10 +59,4 @@
 
 .App > div {
   padding: 10px 10px;
-}
-
-.front-matter-container {
-  background-color: bisque;
-  border-radius: 5px;
-  padding: 15px;
 }
