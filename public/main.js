@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
 
 require('@electron/remote/main').initialize()
 
+const fs = require('fs');
 const path = require('path')
 
 const isDev = require("electron-is-dev")
@@ -37,6 +38,8 @@ app.on('activate', function () {
     }
 })
 
+
+
 // Listen for the message from the renderer process
 ipcMain.on('open-folder-dialog', (event) => {
     // Show the folder dialog
@@ -50,6 +53,38 @@ ipcMain.on('open-folder-dialog', (event) => {
         event.reply('selected-folder', result.filePaths[0]);
       }
     });
+});
+
+ipcMain.on('make-project-folder-dialog', (event, folderPath)=>{
+  const options = {
+    type: 'question',
+    buttons: ['Yes', 'No', 'Cancel'],
+    defaultId: 2,
+    title: 'Question',
+    message: 'Do you want to continue?',
+    detail: 'It will turn the existing folder in a Writer Plat Project',
+    checkboxLabel: 'Remember my answer',
+    checkboxChecked: true,
+  };
+  const result = dialog.showMessageBoxSync(options)
+  
+  if (result === 0) {
+    console.log('User clicked Yes');
+    //create file in main folders
+    const filePath = path.join(folderPath, '.wrplat');
+   
+    fs.writeFileSync(filePath, 'Active');
+    console.log('created');
+
+    //make Binder
+
+    //rename Files & Folders
+    
+  } else if (result === 1) {
+    console.log('User clicked No');
+  } else {
+    console.log('User clicked Cancel');
+  }
 });
 
 // new custom menu template
@@ -173,3 +208,8 @@ const customMenu = [
 //init menu from custom template and set to application window
 const menu = Menu.buildFromTemplate(customMenu)
 Menu.setApplicationMenu(menu)
+
+
+
+
+

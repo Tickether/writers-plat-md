@@ -20,12 +20,11 @@ const username = userInfo.username;
 //default path for app
 //changed this to an app folder so we are drilling into the user's whole documents folder
 const _default = `/Users/${username}/WritersPlatMd`
+
 //if the app folder doesn't exist, create it
 if (!fs.existsSync(_default)) {
   fs.mkdirSync(_default);
 }
-
-
 
 // Template for the list of files presented in sidebar when a folder is chosen.
 export function FileListMap({ data }) {
@@ -71,7 +70,14 @@ function Sidebar() {
   ipcRenderer.on('selected-folder', (event, folderPath) => {
     console.log(`Selected folder: ${folderPath}`);
     setPath(folderPath)
+    const _files = fs.readdirSync(folderPath, { withFileTypes: true });
+    const isBinder = _files.filter(s => s.name.endsWith('.wrplat'))
+    if (isBinder.length <= 0) {
+      event.sender.send('make-project-folder-dialog', folderPath);
+    }
   });
+  
+  
 
   //Altered method to list files and folder sorted by a-z in Memo (to get children of folders too)
   function getFilesWithChildren(path) {
