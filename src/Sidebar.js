@@ -77,6 +77,7 @@ function Sidebar() {
   function getFilesWithChildren(path) {
     const files = fs.readdirSync(path, { withFileTypes: true });
     return files
+      .filter(s => s.isDirectory() || s.name.endsWith('.md'))
       .map((file) => {
         const filePath = pathModule.join(path, file.name);
         const isDirectory = file.isDirectory();
