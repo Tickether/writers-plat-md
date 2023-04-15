@@ -1,5 +1,6 @@
 {
   "name": "writers-plat-md",
+  "productName": "Writer's Plat Md",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -16,11 +17,31 @@
     "@testing-library/user-event": "^12.1.10",
     "concurrently": "^8.0.1",
     "cross-env": "^7.0.3",
-    "electron": "^24.1.0",
+    "electron-is-dev": "^2.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
     "wait-on": "^7.0.1"
+  },
+  "devDependencies": {
+    "electron": "^24.1.0",
+    "electron-builder": "^23.6.0"
+  },
+  "build": {
+    "extends": null,
+    "productName": "Writer's Plat Md",
+    "appId": "",
+    "mac": {
+      "category": ""
+    },
+    "files": [
+      "build/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
   },
   "main": "public/main.js",
   "homepage": "./",
@@ -30,7 +51,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron:serve": "concurrently -k \"cross-env BROWSER=none yarn start\" \"yarn electron:start\"",
-    "electron:build": "",
+    "electron:build": "react-scripts build && electron-builder -c.extraMetadata.main=build/main.js",
     "electron:start": "wait-on tcp:3000 && electron ."
   },
   "eslintConfig": {

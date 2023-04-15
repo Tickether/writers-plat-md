@@ -20,6 +20,7 @@ const username = userInfo.username;
 //default path for app
 const _default = `/Users/${username}/Documents`
 
+// Template for the list of files presented in sidebar when a folder is chosen.
 export function FileListMap({ data }) {
   return (
     <ul className="fileList">

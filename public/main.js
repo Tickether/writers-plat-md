@@ -3,6 +3,10 @@ const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
 
 require('@electron/remote/main').initialize()
 
+const path = require('path')
+
+const isDev = require("electron-is-dev")
+
 function createWindow() {
     // create window
     const win = new BrowserWindow({
@@ -14,8 +18,8 @@ function createWindow() {
             contextIsolation: false,
         }
     })
-
-    win.loadURL('http://localhost:3000')
+    // Loads react app in local host is in dev mode, otherwise will instruct electron to load the built react app's index.html file
+    win.loadURL(isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, "../build/index.html")}`)
 }
 
 app.on('ready', createWindow)
@@ -49,7 +53,24 @@ ipcMain.on('open-folder-dialog', (event) => {
 });
 
 // new custom menu template
+const isMac = process.platform === 'darwin'
+console.log('is Mac? ', isMac)
+
 const customMenu = [
+    ...(isMac ? [{
+    label: app.name,
+    submenu: [
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' }
+    ]
+  }] : []),
     {
         label: 'File',
         submenu: [
@@ -68,9 +89,85 @@ const customMenu = [
             }},
             { label: 'New File', accelerator: 'CmdOrCtrl+N', click: () => console.log('Open file') },
             { type: 'separator' },
-            { role: 'quit' }
+            isMac ? { role: 'close' } : { role: 'quit' }
         ]
-    }
+    },
+    {
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          ...(isMac ? [
+            { role: 'pasteAndMatchStyle' },
+            { role: 'delete' },
+            { role: 'selectAll' },
+            { type: 'separator' },
+            {
+              label: 'Speech',
+              submenu: [
+                { role: 'startSpeaking' },
+                { role: 'stopSpeaking' }
+              ]
+            }
+          ] : [
+            { role: 'delete' },
+            { type: 'separator' },
+            { role: 'selectAll' }
+          ])
+        ]
+      },
+      {
+        // remove the dev tools later
+        label: 'View',
+        submenu: [
+          { role: 'reload' },
+          { role: 'forceReload' },
+          { role: 'toggleDevTools' },
+          { type: 'separator' },
+          { role: 'resetZoom' },
+          { role: 'zoomIn' },
+          { role: 'zoomOut' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' }
+        ]
+      },
+      {
+        label: 'Window',
+        submenu: [
+          { role: 'minimize' },
+          { role: 'zoom' },
+          ...(isMac ? [
+            { type: 'separator' },
+            { role: 'front' },
+            { type: 'separator' },
+            { role: 'window' }
+          ] : [
+            { role: 'close' }
+          ]),
+          {
+            label: 'Inspect Element',
+            click: () => {
+                remote.getCurrentWindow().webContents.inspectElement()
+              }
+          }
+        ]
+      },
+      {
+        role: 'help',
+        submenu: [
+          {
+            label: 'Learn More',
+            click: async () => {
+              const { shell } = require('electron')
+              await shell.openExternal('https://electronjs.org')
+            }
+          }
+        ]
+      }
 ]
 
 //init menu from custom template and set to application window
