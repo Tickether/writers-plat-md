@@ -18,7 +18,14 @@ const userInfo = os.userInfo();
 const username = userInfo.username;
 
 //default path for app
-const _default = `/Users/${username}/Documents`
+//changed this to an app folder so we are drilling into the user's whole documents folder
+const _default = `/Users/${username}/WritersPlatMd`
+//if the app folder doesn't exist, create it
+if (!fs.existsSync(_default)) {
+  fs.mkdirSync(_default);
+}
+
+
 
 // Template for the list of files presented in sidebar when a folder is chosen.
 export function FileListMap({ data }) {
@@ -46,27 +53,50 @@ function Sidebar() {
     console.log(`Selected folder: ${folderPath}`);
     setPath(folderPath)
   });
-  
-  //list files and folders in path sorted by a-z in Memo to save state and update only on change
-  const files = useMemo(
-    ()=>
-      fs
-      .readdirSync(path)
-      .map(file => {
-        const stats = fs.statSync(pathModule.join(path, file))
-        return{
-          name:file,
-          directory: stats.isDirectory()
-        }
+
+  //Altered method to list files and folder sorted by a-z in Memo (to get children of folders too)
+  function getFilesWithChildren(path) {
+    const files = fs.readdirSync(path, { withFileTypes: true });
+    return files
+      .map((file) => {
+        const filePath = pathModule.join(path, file.name);
+        const isDirectory = file.isDirectory();
+        const children = isDirectory ? getFilesWithChildren(filePath) : [];
+        return {
+          name: file.name,
+          path: filePath,
+          directory: isDirectory,
+          children: children,
+        };
       })
-      .sort((a, b) => {
-        if (a.directory === b.directory) {
-          return a.name.localeCompare(b.name)
-        }
-        return a.directory ? -1 : 1
-      }),  
-    [path]
-  )
+      //altered the sort so that it sorts everything alphabetically without separating files and folders.
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  const files = useMemo(() => getFilesWithChildren(path), [path]);
+  
+  // old function preserved for now
+  //list files and folders in path sorted by a-z in Memo to save state and update only on change
+  // const files = useMemo(
+  //   ()=>
+  //     fs
+  //     .readdirSync(path)
+  //     .map(file => {
+  //       const stats = fs.statSync(pathModule.join(path, file))
+  //       return{
+  //         name:file,
+  //         path: path + '/' + file,
+  //         directory: stats.isDirectory()
+  //       }
+  //     })
+  //     .sort((a, b) => {
+  //       if (a.directory === b.directory) {
+  //         return a.name.localeCompare(b.name)
+  //       }
+  //       return a.directory ? -1 : 1
+  //     }),  
+  //   [path]
+  // )
   console.log(files)
   
   // const onBack= () => setPath(pathModule.dirname(path))
