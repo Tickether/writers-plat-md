@@ -29,9 +29,23 @@ if (!fs.existsSync(_default)) {
 
 // Template for the list of files presented in sidebar when a folder is chosen.
 export function FileListMap({ data }) {
+  const [openFolders, setOpenFolders] = useState([]);
+
+  const toggleFolder = (folder) => {
+    setOpenFolders((openFolders) =>
+      openFolders.includes(folder)
+        ? openFolders.filter((f) => f !== folder)
+        : [...openFolders, folder]
+    );
+  };
+
   const renderItems = (items) =>
     items.map((item, index) => (
-      <li key={index} className={item.directory ? "folder" : "file"}>
+      <li 
+        key={index}
+        className={item.directory ? "folder" + (openFolders.includes(item) ? " open" : " closed") : "file"}
+        onClick={() => item.directory && toggleFolder(item)}
+      >
         <span>{item.name}</span>
         {item.directory && (
           <ul>

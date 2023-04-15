@@ -32,6 +32,15 @@
   background-color: white;
 }
 
+.closed li {
+  display: none;
+}
+
+.list-marker {
+  list-style-image: none;
+  list-style-type: none;
+}
+
 /* Footer area */
 .footer {
   grid-area: footer;
