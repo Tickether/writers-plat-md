@@ -54,8 +54,28 @@ ipcMain.on('open-folder-dialog', (event) => {
       }
     });
 });
+/*
+function traverse (item, index, parentIndex= '') {
+  console.log(item, index)
+  if (item.isDirectory) {
+    const sortedChildren = [...item.files, ...item.folders].sort((a, b) => a.name.localeCompare(b.name))
+    sortedChildren.forEach((child, i) => {
+      const childIndex = parentIndex ? parentIndex + '.' + i : index + '.' + i
+      traverse(child, childIndex)
+    })
+  }
+  if (item.name) {
+    const newName = parentIndex ? parentIndex + '#' + item.name : index + '#' + item.name
+    const newPath = item.pathname.substring(0, item.pathname.lastIndexOf('/')) + '/' + newName
+    fs.rename(item.pathname, newPath, (err) => {
+      if (err) throw err
+    })
+  }
+  
+}
+*/
 
-ipcMain.on('make-project-folder-dialog', (event, folderPath)=>{
+ipcMain.on('make-project-folder-dialog', (event, folderPath, files)=>{
   const options = {
     type: 'question',
     buttons: ['Yes', 'No', 'Cancel'],
@@ -70,16 +90,22 @@ ipcMain.on('make-project-folder-dialog', (event, folderPath)=>{
   
   if (result === 0) {
     console.log('User clicked Yes');
-    //create file in main folders
+    //create file in main folders ////make Binder???
     const filePath = path.join(folderPath, '.wrplat');
    
     fs.writeFileSync(filePath, 'Active');
     console.log('created');
-
-    //make Binder
-
-    //rename Files & Folders
+    console.log(files);
     
+    //rename Files & Folders
+    /*
+    let index = 0;
+    files.forEach((item) => {
+      traverse(item, index)
+      index++
+    })
+    return files
+    */
   } else if (result === 1) {
     console.log('User clicked No');
   } else {

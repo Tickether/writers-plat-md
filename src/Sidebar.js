@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 //alternate imports contextIsolation: ture,
 //const fs = require('fs')
@@ -70,17 +70,12 @@ function Sidebar() {
   ipcRenderer.on('selected-folder', (event, folderPath) => {
     console.log(`Selected folder: ${folderPath}`);
     setPath(folderPath)
-    const _files = fs.readdirSync(folderPath, { withFileTypes: true });
-    const isBinder = _files.filter(s => s.name.endsWith('.wrplat'))
-    if (isBinder.length <= 0) {
-      event.sender.send('make-project-folder-dialog', folderPath);
-    }
   });
   
   
 
   //Altered method to list files and folder sorted by a-z in Memo (to get children of folders too)
-  function getFilesWithChildren(path) {
+  const getFilesWithChildren = useCallback((path) => {
     const files = fs.readdirSync(path, { withFileTypes: true });
     return files
       .filter(s => s.isDirectory() || s.name.endsWith('.md'))
@@ -95,11 +90,10 @@ function Sidebar() {
           children: children,
         };
       })
-      //altered the sort so that it sorts everything alphabetically without separating files and folders.
       .sort((a, b) => a.name.localeCompare(b.name));
-  }
+  }, []);
 
-  const files = useMemo(() => getFilesWithChildren(path), [path]);
+  const files = useMemo(() => getFilesWithChildren(path), [path, getFilesWithChildren]);
   
   // old function preserved for now
   //list files and folders in path sorted by a-z in Memo to save state and update only on change
@@ -124,6 +118,22 @@ function Sidebar() {
   //   [path]
   // )
   console.log(files)
+
+  
+  useEffect(() => {
+    //filter project file from path //NB: didnt use file here cos files show .md and folder will always return zero
+    const isBinder = fs.readdirSync(path, { withFileTypes: true }).filter(s => s.name.endsWith('.wrplat'))
+    console.log(isBinder)
+  
+    //open dialog and pass path and files
+    if (files.length > 0) {
+      if (isBinder.length <= 0) {
+        ipcRenderer.send('make-project-folder-dialog', path, files);
+      }
+    }
+
+  }, [path, files]);
+  
   
   // const onBack= () => setPath(pathModule.dirname(path))
   // const onOpen = folder => setPath(pathModule.join(path, folder))
