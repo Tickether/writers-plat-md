@@ -50,7 +50,8 @@ ipcMain.on('open-folder-dialog', (event) => {
     .then((result) => {
       if (!result.canceled && result.filePaths.length > 0) {
         // Send the selected folder path back to the renderer process
-        event.reply('selected-folder', result.filePaths[0]);
+        // added .replaceAll here to test if renae files works on PC
+        event.reply('selected-folder', result.filePaths[0].replaceAll('\\', '/'));
       }
     });
 });
