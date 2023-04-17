@@ -91,36 +91,51 @@ const traverse = useCallback((files) => {
 }, [])
 */
 // make project files and folers binding them
+
 function traverse (files) {
-  files.forEach((item, index) => {
-    console.log(item, index)
-    if (item.directory === false) {
-      const newName = `Fileeee ${index+1}${path.extname(item.name)}`;
-      console.log("newName", newName)
+  function createNewFiles(files) {
+    const newFiles = []
+    files.forEach((item, index) =>{
+      const newName = `${index+1}#${item.name}`;
+      const newPath = path.join(item.path.substr(0, item.path.lastIndexOf("\/")), newName)
+      const newItem = {
+        name: newName,
+        path: newPath,
+        children: item.children.length > 0 ? createNewFiles(item.children) :[]
+      }
+      newFiles.push(newItem)
+    })
+    return newFiles
+  }
+  const newFiles = createNewFiles(files)
+  function renameChildren(oldChildren, newChildren) {
 
-      const newPath = item.path.replace(item.name, newName);
-      console.log("newPath",newPath)
+    for (let i=0; i < oldChildren.length; i++) {
+      const oldChild = oldChildren[i]
+      const newChild = newChildren[i]
 
-      fs.rename(item.path, newPath, (err) => {
-        if (err) throw err
-      })  
-    } else{
-      traverse(item.children)
-      console.log("problem", item.children , index)
-      const newName = `Folderrrrr ${index+1}`;
-      console.log("newName", newName)
+      if (oldChild.directory) {
+        renameChildren(oldChild.children, newChild.children)
+      } else {
+        console.log('Not a Directory')
+      }
 
-      const newPath = item.path.replace(item.name, newName);
-      console.log("newPath",newPath)
+      const oldPath = oldChild.path
+      const newPath = newChild.path
 
-      fs.renameSync(item.path, newPath, (err) => {
-        if (err) throw err
-      })   
+      fs.renameSync(oldPath, newPath)
     }
-    if (item.directory === true){
-      //
+  }
+  for (let i=0; i < files.length; i++) {
+    const oldPath = files[i].path
+    const newPath = newFiles[i].path
+    if (files[i].directory) {
+      renameChildren(files[i].children, newFiles[i].children)
     }
-  })
+
+    fs.renameSync(oldPath, newPath)
+  }
+  // setPath(path)
 }
 
 /*
@@ -145,7 +160,7 @@ function traverse(files) {
 }
 */
 
-ipcMain.on('make-project-folder-dialog', (event, folderPath, files)=>{
+ipcMain.on('make-project-folder-dialog', (event, projRootPath, files)=>{
   const options = {
     type: 'question',
     buttons: ['Yes', 'No', 'Cancel'],
@@ -161,14 +176,13 @@ ipcMain.on('make-project-folder-dialog', (event, folderPath, files)=>{
   if (result === 0) {
     console.log('User clicked Yes');
     //create file in main folders ////make Binder???
-    const filePath = path.join(folderPath, '.wrplat');
+    const wrPlatFilePath = path.join(projRootPath, '.wrplat');
    
-    fs.writeFileSync(filePath, 'Active');
-    console.log('created');
-    console.log(files);
+    fs.writeFileSync(wrPlatFilePath, 'Active');
     
     //rename Files & Folders
     traverse(files)
+    event.sender.send('make-project-folder-reply', 'Success');
     
   } else if (result === 1) {
     console.log('User clicked No');

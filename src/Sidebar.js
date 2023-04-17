@@ -151,17 +151,22 @@ function Sidebar({ activeItems, setActiveItems }) {
   
   useEffect(() => {
     //filter project file from path //NB: didnt use file here cos files show .md and folder will always return zero
-    const isBinder = fs.readdirSync(path, { withFileTypes: true }).filter(s => s.name.endsWith('.wrplat'))
-    console.log(isBinder)
+    // const isBinder = fs.readdirSync(path, { withFileTypes: true }).filter(s => s.name.endsWith('.wrplat'))
+    const isProject = fs.existsSync(pathModule.join(path, '.wrplat'))
+    console.log(isProject)
   
     //open dialog and pass path and files
     if (files.length > 0) {
-      if (isBinder.length <= 0) {
+      if (!isProject) {
         ipcRenderer.send('make-project-folder-dialog', path, files);
       }
     }
 
   }, [path, files]);
+
+  ipcRenderer.on('make-project-folder-reply', (event, arg) => {
+    setPath(path)
+  });
   
   
   // const onBack= () => setPath(pathModule.dirname(path))
