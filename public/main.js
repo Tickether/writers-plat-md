@@ -54,24 +54,94 @@ ipcMain.on('open-folder-dialog', (event) => {
       }
     });
 });
+
 /*
-function traverse (item, index, parentIndex= '') {
-  console.log(item, index)
-  if (item.isDirectory) {
-    const sortedChildren = [...item.files, ...item.folders].sort((a, b) => a.name.localeCompare(b.name))
-    sortedChildren.forEach((child, i) => {
-      const childIndex = parentIndex ? parentIndex + '.' + i : index + '.' + i
-      traverse(child, childIndex)
-    })
-  }
-  if (item.name) {
-    const newName = parentIndex ? parentIndex + '#' + item.name : index + '#' + item.name
-    const newPath = item.pathname.substring(0, item.pathname.lastIndexOf('/')) + '/' + newName
-    fs.rename(item.pathname, newPath, (err) => {
-      if (err) throw err
-    })
-  }
+const traverse = useCallback((files) => {
+  files.forEach((item, index) => {
+
+    console.log(item, index)
+    if (item.directory) {
+      const newName = `Folder ${index+1}`;
+      console.log("newName", newName)
+
+      const newPath = item.path.replace(item.name, newName);
+      console.log("newPath",newPath)
+
+      fs.rename(item.path, newPath, (err) => {
+        if (err) throw err
+      })
+      
+      if (item.children.length !== 0) {
+        traverse(item.children) 
+      }   
+    } else {
+      const newName = `File ${index+1}`;
+      console.log("newName", newName)
+
+      const newPath = item.path.replace(item.name, newName);
+      console.log("newPath",newPath)
+
+      fs.rename(item.path, newPath, (err) => {
+        if (err) throw err
+      })
+      
+    }
+  })
   
+}, [])
+*/
+// make project files and folers binding them
+function traverse (files) {
+  files.forEach((item, index) => {
+    console.log(item, index)
+    if (item.directory === false) {
+      const newName = `Fileeee ${index+1}${path.extname(item.name)}`;
+      console.log("newName", newName)
+
+      const newPath = item.path.replace(item.name, newName);
+      console.log("newPath",newPath)
+
+      fs.rename(item.path, newPath, (err) => {
+        if (err) throw err
+      })  
+    } else{
+      traverse(item.children)
+      console.log("problem", item.children , index)
+      const newName = `Folderrrrr ${index+1}`;
+      console.log("newName", newName)
+
+      const newPath = item.path.replace(item.name, newName);
+      console.log("newPath",newPath)
+
+      fs.renameSync(item.path, newPath, (err) => {
+        if (err) throw err
+      })   
+    }
+    if (item.directory === true){
+      //
+    }
+  })
+}
+
+/*
+function traverse(files) {
+  files.forEach((item, index) => {
+    if (item.directory === true) {
+      traverse(item.children);
+    }
+
+    const newName = item.directory
+      ? `Folder ${index + 1}`
+      : `File ${index + 1}${path.extname(item.name)}`;
+    console.log("newName", newName);
+
+    const newPath = item.path.replace(item.name, newName);
+    console.log("newPath", newPath);
+
+    fs.renameSync(item.path, newPath, (err) => {
+      if (err) throw err;
+    });
+  });
 }
 */
 
@@ -98,14 +168,8 @@ ipcMain.on('make-project-folder-dialog', (event, folderPath, files)=>{
     console.log(files);
     
     //rename Files & Folders
-    /*
-    let index = 0;
-    files.forEach((item) => {
-      traverse(item, index)
-      index++
-    })
-    return files
-    */
+    traverse(files)
+    
   } else if (result === 1) {
     console.log('User clicked No');
   } else {
