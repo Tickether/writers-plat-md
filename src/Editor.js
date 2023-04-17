@@ -35,27 +35,19 @@ import {
   blockquote
 } from "@bangle.dev/base-components";
 import { subscript, superscript } from "@bangle.dev/text-formatting";
-import { useState } from "react";
+// import { frontMatter, FrontMatter,  } from './customNodes/frontMatter';
+import { useEffect, useState, useRef } from "react";
+
+const fs = window.require('fs')
+
 
 const menuKey = new PluginKey("menuKey");
 
-export function Editor() {
+export function Editor({ activeItems }) {
   const [ editor, setEditor ] = useState();
+  const editorRef = useRef()
   const editorState = useEditorState({
-    initialValue: {
-      type: 'doc',
-      content: [
-        {
-          type: 'paragraph',
-          content: [
-            {
-              type: 'text',
-              text: 'Hello, World!'
-            }
-          ]
-        }
-      ]
-    },
+    initialValue: "Hello, World!",
     specs: [
       bold.spec(),
       bulletList.spec(),
@@ -73,6 +65,7 @@ export function Editor() {
       blockquote.spec(),
       subscript.spec(),
       superscript.spec(),
+      // frontMatter.spec()
     ],
     plugins: () => [
       bold.plugins(),
@@ -93,11 +86,42 @@ export function Editor() {
       superscript.plugins({
         keybindings: { toggleSuperscript: 'Mod-Shift-s' }
       }),
+      // frontMatter.plugins(),
       floatingMenu.plugins({
         key: menuKey,
       }),
     ],
   });
+
+  useEffect(() => {
+    function getTextFromFile() {
+      const activeItemsSorted = activeItems.sort((a,b) => a.localeCompare(b))
+      const promises = activeItemsSorted.map(path => {
+        return new Promise((resolve, reject) => {
+          fs.readFile(path, 'utf8', (err, data) => {
+            if (err) reject(err);
+            else resolve({ path: path, contents: data });
+          });
+        });
+      });
+    
+      return Promise.all(promises).then(fileContents => {
+        const text = fileContents.map(fc => fc.contents).join('\n--##--\n');
+        console.log(typeof(text))
+        return text;
+      });
+    }
+
+    getTextFromFile().then(text => {
+      if (editorRef.current) {
+        const view = editorRef.current.view;
+        view.dispatch(view.state.tr.replaceWith(0, view.state.doc.content.size, 
+        view.state.schema.text(text + " ")));
+      }
+    }).catch(error => {
+      console.error(error);
+    });
+  }, [activeItems]);
 
   return (
   <>
@@ -108,7 +132,7 @@ export function Editor() {
         renderMenu={() => (
           <Menu
             style={{
-              backgroundColor: 'transparent',
+              backgroundColor: 'lightgrey',
               color:
                 document.documentElement.getAttribute('data-theme') === 'dark'
                   ? 'white'
@@ -134,13 +158,26 @@ export function Editor() {
           </Menu>
         )}
     />
-    <BangleEditor
-      state={editorState}
-      onReady={setEditor}
-      style={{ margin: "10px 20px 0 20px", backgroundColor: "white" }}
-    >
-      <FloatingMenu menuKey={menuKey} />
-    </BangleEditor>
+      <BangleEditor
+        ref={editorRef}
+        state={editorState}
+        onReady={setEditor}
+        style={{ margin: "10px 20px 0 20px", backgroundColor: "white" }}
+        // renderNodeViews={({ node, updateAttrs, children }) => {
+        //   if (node.type.name === 'frontMatter') {
+        //     return (
+        //       <FrontMatter node={node} updateAttrs={updateAttrs}>
+        //         {children}
+        //       </FrontMatter>
+        //     );
+        //   }
+        // }}
+      >
+        <FloatingMenu menuKey={menuKey} />
+      </BangleEditor>
   </>
   );
 }
+
+
+export default Editor;

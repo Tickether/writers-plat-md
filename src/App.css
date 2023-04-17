@@ -28,17 +28,30 @@
 .sidebar {
   grid-area: sidebar;
   height: calc(100vh - 70px);
-  overflow: scroll;
+  overflow-y: scroll;
+  overflow-x: hidden;
   background-color: white;
+}
+
+ul.fileList {
+  padding-left: 20px;
 }
 
 .closed li {
   display: none;
 }
 
-.list-marker {
-  list-style-image: none;
-  list-style-type: none;
+span.arrow {
+  margin-left: -20px;
+  padding-right: 8px;
+}
+
+span.ItemName {
+  padding-left: 5px;
+}
+
+.activeFile {
+  background-color: blue;
 }
 
 /* Footer area */

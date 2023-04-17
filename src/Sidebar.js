@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
+import { FaChevronDown, FaChevronRight, FaRegFolder, FaRegFolderOpen, FaRegFile } from "react-icons/fa"
 
 //alternate imports contextIsolation: ture,
 //const fs = require('fs')
@@ -27,25 +28,54 @@ if (!fs.existsSync(_default)) {
 }
 
 // Template for the list of files presented in sidebar when a folder is chosen.
-export function FileListMap({ data }) {
+export function FileListMap({ data, activeItems, setActiveItems }) {
   const [openFolders, setOpenFolders] = useState([]);
 
-  const toggleFolder = (folder) => {
+  const toggleFolder = (folder,e) => {
+    e.stopPropagation();
     setOpenFolders((openFolders) =>
-      openFolders.includes(folder)
-        ? openFolders.filter((f) => f !== folder)
-        : [...openFolders, folder]
+      openFolders.includes(folder.path)
+        ? openFolders.filter((f) => f !== folder.path)
+        : [...openFolders, folder.path]
     );
+  };
+
+  const toggleActive = (folder,e) => {
+    e.stopPropagation();
+    if (e.MetaKey) {
+      setActiveItems([...activeItems, folder.path]);
+    } else if (e.shiftKey) {
+      setActiveItems([...activeItems, folder.path]);
+    } else {
+      activeItems.includes(folder.path) ? setActiveItems([]) : setActiveItems([folder.path]);
+    }
   };
 
   const renderItems = (items) =>
     items.map((item, index) => (
       <li 
         key={index}
-        className={item.directory ? "folder" + (openFolders.includes(item) ? " open" : " closed") : "file"}
-        onClick={() => item.directory && toggleFolder(item)}
+        className={item.directory ? "folder" + (openFolders.includes(item.path) ? " open" : " closed") : "file"}
+        style={{ listStyleType: "none" }}
       >
-        <span>{item.name}</span>
+        <span 
+        onClick={(e) => item.directory && toggleFolder(item,e)}
+        className={item.directory ? "arrow" : ""}
+        >
+        {item.directory && (openFolders.includes(item.path) ? 
+        <FaChevronDown fontSize="0.8em" paddingRight="2em"/> : 
+        <FaChevronRight fontSize="0.8em"/>)}
+        </span>
+        <span 
+          className={activeItems.includes(item.path) ? "activeFile" : ""}
+          onClick={(e) => {toggleActive(item, e); console.log('from Sidebar: ', activeItems)}}
+        >
+          {item.directory ? openFolders.includes(item.path) ? 
+        <FaRegFolderOpen fontSize="0.8em"/> : 
+        <FaRegFolder fontSize="0.8em"/> :
+        <FaRegFile fontSize="0.8em"/>}
+          <span className="ItemName">{item.name}</span>
+        </span>
         {item.directory && (
           <ul>
             {renderItems(item.children)}
@@ -53,16 +83,15 @@ export function FileListMap({ data }) {
         )}
       </li>
     ));
-  return renderItems(data);
+  return renderItems(data)
 }
 
 
-function Sidebar() {
+function Sidebar({ activeItems, setActiveItems }) {
   const [
     path, 
     setPath
   ] = useState(_default)
-
   function handleOpenFolder() {
     ipcRenderer.send('open-folder-dialog');
   }
@@ -145,9 +174,12 @@ function Sidebar() {
   return (
     <>
     {path === _default ? <button onClick={handleOpenFolder}>open me darnit</button> : 
+    <>
+    <span className="pathTitle">{pathModule.basename(path)}</span>
     <ul className="fileList">
-      <FileListMap data={files} />
+      <FileListMap data={files} activeItems={activeItems} setActiveItems={setActiveItems} />
     </ul>
+    </>
     }
     </>
   )
