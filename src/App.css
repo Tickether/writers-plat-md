@@ -41,6 +41,10 @@ ul.fileList {
   display: none;
 }
 
+.closed .dropArea {
+  display: none;
+}
+
 span.arrow {
   margin-left: -20px;
   padding-right: 8px;
@@ -52,6 +56,14 @@ span.ItemName {
 
 .activeFile {
   background-color: blue;
+}
+
+.dropArea {
+  display: block;
+  height: 10px;
+}
+.dropActive {
+  background: red;
 }
 
 /* Footer area */

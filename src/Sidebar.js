@@ -53,17 +53,27 @@ export function FileListMap({ data, activeItems, setActiveItems }) {
 
   const renderItems = (items) =>
     items.map((item, index) => (
+      <>
       <li 
         key={index}
         className={item.directory ? "folder" + (openFolders.includes(item.path) ? " open" : " closed") : "file"}
         style={{ listStyleType: "none" }}
+        draggable={true}
+        onDragStart={(event) => {
+          // when you start dragging an item you pass data from the dragged item that will be "carried". JSON stringify is needed to send an array
+          event.dataTransfer.setData("item", JSON.stringify(item)); 
+          console.log("Started dragging ", item.name)
+        }}
+        onDragEnd={() => {
+          console.log("Stopped dragging ", item.name)
+        }}
       >
         <span 
         onClick={(e) => item.directory && toggleFolder(item,e)}
         className={item.directory ? "arrow" : ""}
         >
         {item.directory && (openFolders.includes(item.path) ? 
-        <FaChevronDown fontSize="0.8em" paddingRight="2em"/> : 
+        <FaChevronDown fontSize="0.8em" /> : 
         <FaChevronRight fontSize="0.8em"/>)}
         </span>
         <span 
@@ -77,11 +87,42 @@ export function FileListMap({ data, activeItems, setActiveItems }) {
           <span className="ItemName">{item.name}</span>
         </span>
         {item.directory && (
+          <>
+          <span
+            // drop area for the top level of an open folder
+            className="dropArea"
+            // prevent default here allows the item to have something droppe don it, otherwise nothing will happen when you drop here
+            onDragOver={event => {event.preventDefault();}}
+            // drag enter and leave allow the hover even to occur (normal css :hover is disabled during drag)
+            onDragEnter={event => {event.currentTarget.classList.toggle('dropActive')}}
+            onDragLeave={event => {event.currentTarget.classList.toggle('dropActive')}}
+            // onDrop this function is called. event data transfer provides the data from the dragged item to this function. JSON parse is needed to egt JSON string back to array
+            onDrop={(event) => {
+              const droppedItem = JSON.parse(event.dataTransfer.getData("item")); 
+              event.currentTarget.classList.toggle('dropActive')
+              console.log('Dropped ', droppedItem.name, " IN ", item.name)}}
+          ></span>
           <ul>
             {renderItems(item.children)}
           </ul>
+          </>
         )}
       </li>
+      <span
+        // drop area for below each file and folder
+        className="dropArea"
+        // prevent default here allows the item to have something droppe don it, otherwise nothing will happen when you drop here
+        onDragOver={event => {event.preventDefault();}}
+        // drag enter and leave allow the hover even to occur (normal css :hover is disabled during drag)
+        onDragEnter={event => {event.currentTarget.classList.toggle('dropActive')}}
+        onDragLeave={event => {event.currentTarget.classList.toggle('dropActive')}}
+        // onDrop this function is called. event data transfer provides the data from the dragged item to this function. JSON parse is needed to egt JSON string back to array
+        onDrop={(event) => {
+          const droppedItem = JSON.parse(event.dataTransfer.getData("item")); 
+          event.currentTarget.classList.toggle('dropActive')
+          console.log('Dropped ', droppedItem.name, " under ", item.name)}}
+      ></span>
+      </>
     ));
   return renderItems(data)
 }
