@@ -109,7 +109,7 @@ function Sidebar({ activeItems, setActiveItems }) {
     return files
       .filter(s => s.isDirectory() || s.name.endsWith('.md'))
       .map((file) => {
-        const filePath = pathModule.join(path, file.name);
+        const filePath = pathModule.join(path, file.name).replaceAll('\\', '\/');
         const isDirectory = file.isDirectory();
         const children = isDirectory ? getFilesWithChildren(filePath) : [];
         return {
