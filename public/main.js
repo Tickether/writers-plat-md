@@ -161,6 +161,64 @@ function traverse(files) {
 }
 */
 
+
+
+//get array of files/folder directly in sub directory with same parent
+//files must but an array of the sub diretory only
+function moveFolder(files, droppedIndex, underIndex) {
+  let newOrder = []
+  let oldIndex
+  let unIndex
+  let file
+  for (let i = 0; i < files.length; i++) {
+    
+    if (files[i].name === droppedIndex.name) {
+      oldIndex = i
+      file = files[i]
+      newOrder = files.splice(i, 1)
+    }
+    if (files[i].name === underIndex.name) {
+      unIndex = i
+    }
+  }
+  newOrder.splice((unIndex -1), 0, file)
+  //loop over new order with files names
+  for (let i = 0; i < newOrder.length; i++) {
+    if (newOrder.length === files.length) {
+      const newPath = files[i].path;
+      console.log("newPath", newPath);
+
+      fs.renameSync(newOrder[i].path, newPath, (err) => {
+        if (err) throw err;
+      });
+    }
+    
+  }
+}
+
+
+/*
+function movetoFolder (){
+
+}
+*/
+/*
+ipcMain.on('make-drag-into'), (event, data, droppedItem, underItem)=>{
+
+  movetoFolder(data, droppedItem, underItem)
+ 
+  event.sender.send('make-drag-into-reply', 'Success');
+}
+*/
+/*
+ipcMain.on('make-drag'), (event, data, droppedItem, underItem)=>{
+
+  moveFolder(data, droppedItem, underItem)
+ 
+  event.sender.send('make-drag-reply', 'Success');
+}
+*/
+
 ipcMain.on('make-project-folder-dialog', (event, projRootPath, files)=>{
   const options = {
     type: 'question',

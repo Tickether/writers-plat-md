@@ -52,10 +52,12 @@ export function FileListMap({ data, activeItems, setActiveItems }) {
   };
 
   const renderItems = (items) =>
-    items.map((item, index) => (
-      <>
-      <li 
-        key={index}
+    items.map((item) => (
+      
+      
+      <div key={item.name}>
+      <li
+        key={item.name}
         className={item.directory ? "folder" + (openFolders.includes(item.path) ? " open" : " closed") : "file"}
         style={{ listStyleType: "none" }}
         draggable={true}
@@ -100,9 +102,11 @@ export function FileListMap({ data, activeItems, setActiveItems }) {
             onDrop={(event) => {
               const droppedItem = JSON.parse(event.dataTransfer.getData("item")); 
               event.currentTarget.classList.toggle('dropActive')
-              console.log('Dropped ', droppedItem.name, " IN ", item.name)}}
+              console.log('Dropped ', droppedItem.name, " IN ", item.name)
+              //ipcRenderer.send('make-drag-into', data, droppedItem.path, item.path);
+            }}
           ></span>
-          <ul>
+          <ul key={item.children.name}>
             {renderItems(item.children)}
           </ul>
           </>
@@ -120,9 +124,16 @@ export function FileListMap({ data, activeItems, setActiveItems }) {
         onDrop={(event) => {
           const droppedItem = JSON.parse(event.dataTransfer.getData("item")); 
           event.currentTarget.classList.toggle('dropActive')
-          console.log('Dropped ', droppedItem.name, " under ", item.name)}}
+          console.log('Dropped ', droppedItem.name, " under ", item.name)
+          //get parent path
+          const parentDirectory = pathModule.dirname(droppedItem.path)
+          //get Specific array of files in folders
+          const files = fs.readdirSync(parentDirectory).filter((file) => file !== '.wrplat')
+          console.log(files)
+          //ipcRenderer.send('make-drag', data, droppedItem.path, item.path);
+        }}
       ></span>
-      </>
+      </div>
     ));
   return renderItems(data)
 }
@@ -208,6 +219,17 @@ function Sidebar({ activeItems, setActiveItems }) {
   ipcRenderer.on('make-project-folder-reply', (event, arg) => {
     setPath(path)
   });
+  
+  /*
+  ipcRenderer.on('make-drag-reply', (event, arg) => {
+    setPath(path)
+  });
+  */
+  /*
+  ipcRenderer.on('make-drag-into-reply', (event, arg) => {
+    setPath(path)
+  });
+  */
   
   
   // const onBack= () => setPath(pathModule.dirname(path))
