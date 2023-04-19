@@ -51,7 +51,7 @@ ipcMain.on('open-folder-dialog', (event) => {
       if (!result.canceled && result.filePaths.length > 0) {
         // Send the selected folder path back to the renderer process
         // added .replaceAll here to test if renae files works on PC
-        event.reply('selected-folder', result.filePaths[0].replaceAll('\\', '\/'));
+        event.reply('selected-folder', result.filePaths[0].replaceAll('\\', '/'));
       }
     });
 });
@@ -94,15 +94,15 @@ const traverse = useCallback((files) => {
 // make project files and folers binding them
 
 function traverse (files) {
-  function createNewFiles(files) {
+  function createNewFiles(files, parentIndex = "") {
     const newFiles = []
     files.forEach((item, index) =>{
-      const newName = `${index+1}#${item.name}`;
-      const newPath = path.join(item.path.substr(0, item.path.lastIndexOf("\/")), newName)
+      const newName = `${parentIndex}${index}#${item.name}`;
+      const newPath = path.join(item.path.substr(0, item.path.lastIndexOf("/")), newName)
       const newItem = {
         name: newName,
         path: newPath,
-        children: item.children.length > 0 ? createNewFiles(item.children) :[]
+        children: item.children.length > 0 ? createNewFiles(item.children, parentIndex+index+'.') :[]
       }
       newFiles.push(newItem)
     })
@@ -202,22 +202,22 @@ function movetoFolder (){
 
 }
 */
-/*
-ipcMain.on('make-drag-into'), (event, data, droppedItem, underItem)=>{
 
-  movetoFolder(data, droppedItem, underItem)
- 
-  event.sender.send('make-drag-into-reply', 'Success');
-}
-*/
-/*
-ipcMain.on('make-drag'), (event, data, droppedItem, underItem)=>{
+ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, droppedUnder, projRootPath, files) => {
+  const isProject = fs.existsSync(path.join(projRootPath, '.wrplat'))
+  const destinationArray = files
+  if (isProject) {
+    if (droppedUnder) {
+      console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
+    } else {
+      console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
+    }
+  } else {
+    console.log("This root folder is not a Writer's Plat project.")
+  }
+  // movetoFolder(data, droppedItem, underItem)
+})
 
-  moveFolder(data, droppedItem, underItem)
- 
-  event.sender.send('make-drag-reply', 'Success');
-}
-*/
 
 ipcMain.on('make-project-folder-dialog', (event, projRootPath, files)=>{
   const options = {
