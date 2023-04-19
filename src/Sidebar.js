@@ -60,11 +60,10 @@ export function FileListMap({ data, activeItems, setActiveItems, projRootPath, s
 
   const renderItems = (items, parentIndex="") =>
     items.map((item, index) => (
-      <>
+      <div key={item.name}>
       {/* {console.log('key= ', item.name)} */}
       { index === 0 ?
       <span
-            key={item.name+'dropAbove'}
             // drop area for the top level of an open folder
             className="dropArea"
             // prevent default here allows the item to have something droppe don it, otherwise nothing will happen when you drop here
@@ -83,7 +82,6 @@ export function FileListMap({ data, activeItems, setActiveItems, projRootPath, s
       ></span> : <></>
       }
       <li
-        key={`${parentIndex}.${index}`}
         className={item.directory ? "folder" + (openFolders.includes(item.path) ? " open" : " closed") : "file"}
         style={{ listStyleType: "none" }}
         draggable={true}
@@ -139,7 +137,7 @@ export function FileListMap({ data, activeItems, setActiveItems, projRootPath, s
           // console.log('dropFunction called')
         }}
       ></span>
-      </>
+      </div>
     ));
   return renderItems(data)
 }
