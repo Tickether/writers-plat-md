@@ -28,7 +28,7 @@ if (!fs.existsSync(_default)) {
 }
 
 // Template for the list of files presented in sidebar when a folder is chosen.
-export function FileListMap({ data, activeItems, setActiveItems }) {
+export function FileListMap({ data, activeItems, setActiveItems, projRootPath, setPath }) {
   const [openFolders, setOpenFolders] = useState([]);
 
   const toggleFolder = (folder,e) => {
@@ -51,23 +51,49 @@ export function FileListMap({ data, activeItems, setActiveItems }) {
     }
   };
 
-  const renderItems = (items) =>
-    items.map((item) => (
-      
-      
-      <div key={item.name}>
+  const dropFunction = (droppedItem, droppedOnItem, droppedUnder, projRootPath) => {
+    ipcRenderer.invoke('item-dropped', droppedItem, droppedOnItem, droppedUnder, projRootPath, data).then((result) => {
+      setPath(projRootPath)
+    })
+    // console.log('dropFunction sent command to main')
+  }
+
+  const renderItems = (items, parentIndex="") =>
+    items.map((item, index) => (
+      <>
+      {/* {console.log('key= ', item.name)} */}
+      { index === 0 ?
+      <span
+            key={item.name+'dropAbove'}
+            // drop area for the top level of an open folder
+            className="dropArea"
+            // prevent default here allows the item to have something droppe don it, otherwise nothing will happen when you drop here
+            onDragOver={event => {event.preventDefault();}}
+            // drag enter and leave allow the hover even to occur (normal css :hover is disabled during drag)
+            onDragEnter={event => {event.currentTarget.classList.toggle('dropActive')}}
+            onDragLeave={event => {event.currentTarget.classList.toggle('dropActive')}}
+            // onDrop this function is called. event data transfer provides the data from the dragged item to this function. JSON parse is needed to egt JSON string back to array
+            onDrop={(event) => {
+              const droppedItem = JSON.parse(event.dataTransfer.getData("item")); 
+              event.currentTarget.classList.toggle('dropActive')
+              // console.log('Dropped named: ', droppedItem.name, 'ABOVE: ', item.name)
+              dropFunction(droppedItem, item, false, projRootPath)
+              // console.log('dropFunction called')
+            }}
+      ></span> : <></>
+      }
       <li
-        key={item.name}
+        key={`${parentIndex}.${index}`}
         className={item.directory ? "folder" + (openFolders.includes(item.path) ? " open" : " closed") : "file"}
         style={{ listStyleType: "none" }}
         draggable={true}
         onDragStart={(event) => {
           // when you start dragging an item you pass data from the dragged item that will be "carried". JSON stringify is needed to send an array
           event.dataTransfer.setData("item", JSON.stringify(item)); 
-          console.log("Started dragging ", item.name)
+          // console.log('Started dragging: ', item.name)
         }}
         onDragEnd={() => {
-          console.log("Stopped dragging ", item.name)
+          // console.log("Stopped dragging: ", item.name)
         }}
       >
         <span 
@@ -88,31 +114,15 @@ export function FileListMap({ data, activeItems, setActiveItems }) {
         <FaRegFile fontSize="0.8em"/>}
           <span className="ItemName">{item.name}</span>
         </span>
-        {item.directory && (
-          <>
-          <span
-            // drop area for the top level of an open folder
-            className="dropArea"
-            // prevent default here allows the item to have something droppe don it, otherwise nothing will happen when you drop here
-            onDragOver={event => {event.preventDefault();}}
-            // drag enter and leave allow the hover even to occur (normal css :hover is disabled during drag)
-            onDragEnter={event => {event.currentTarget.classList.toggle('dropActive')}}
-            onDragLeave={event => {event.currentTarget.classList.toggle('dropActive')}}
-            // onDrop this function is called. event data transfer provides the data from the dragged item to this function. JSON parse is needed to egt JSON string back to array
-            onDrop={(event) => {
-              const droppedItem = JSON.parse(event.dataTransfer.getData("item")); 
-              event.currentTarget.classList.toggle('dropActive')
-              console.log('Dropped ', droppedItem.name, " IN ", item.name)
-              //ipcRenderer.send('make-drag-into', data, droppedItem.path, item.path);
-            }}
-          ></span>
-          <ul key={item.children.name}>
-            {renderItems(item.children)}
-          </ul>
-          </>
-        )}
       </li>
+      {item.directory && (
+        <div className={openFolders.includes(item.path) ? "children" : "children hidden" }>
+          {renderItems(item.children, `${parentIndex}.${index}`)}
+        </div>
+      )}
       <span
+      key={item.name+'dropBelow'}
+
         // drop area for below each file and folder
         className="dropArea"
         // prevent default here allows the item to have something droppe don it, otherwise nothing will happen when you drop here
@@ -124,19 +134,16 @@ export function FileListMap({ data, activeItems, setActiveItems }) {
         onDrop={(event) => {
           const droppedItem = JSON.parse(event.dataTransfer.getData("item")); 
           event.currentTarget.classList.toggle('dropActive')
-          console.log('Dropped ', droppedItem.name, " under ", item.name)
-          //get parent path
-          const parentDirectory = pathModule.dirname(droppedItem.path)
-          //get Specific array of files in folders
-          const files = fs.readdirSync(parentDirectory).filter((file) => file !== '.wrplat')
-          console.log(files)
-          //ipcRenderer.send('make-drag', data, droppedItem.path, item.path);
+          // console.log('Dropped ', droppedItem.name, " BELOW ", item.name)
+          dropFunction(droppedItem, item, true, projRootPath)
+          // console.log('dropFunction called')
         }}
       ></span>
-      </div>
+      </>
     ));
   return renderItems(data)
 }
+
 
 
 function Sidebar({ activeItems, setActiveItems }) {
@@ -152,6 +159,11 @@ function Sidebar({ activeItems, setActiveItems }) {
     console.log(`Selected folder: ${folderPath}`);
     setPath(folderPath)
   });
+
+  // ipcRenderer.on('item-dropped-reply', (event, droppedItem, projRootPath) => {
+  //   console.log('finished dropping item ', droppedItem.name)
+  //   setPath(projRootPath)
+  // });
   
   
 
@@ -161,7 +173,7 @@ function Sidebar({ activeItems, setActiveItems }) {
     return files
       .filter(s => s.isDirectory() || s.name.endsWith('.md'))
       .map((file) => {
-        const filePath = pathModule.join(path, file.name).replaceAll('\\', '\/');
+        const filePath = pathModule.join(path, file.name).replaceAll('\\', '/');
         const isDirectory = file.isDirectory();
         const children = isDirectory ? getFilesWithChildren(filePath) : [];
         return {
@@ -245,7 +257,7 @@ function Sidebar({ activeItems, setActiveItems }) {
     <>
     <span className="pathTitle">{pathModule.basename(path)}</span>
     <ul className="fileList">
-      <FileListMap data={files} activeItems={activeItems} setActiveItems={setActiveItems} />
+      <FileListMap data={files} activeItems={activeItems} setActiveItems={setActiveItems} projRootPath={path} setPath={setPath} />
     </ul>
     </>
     }

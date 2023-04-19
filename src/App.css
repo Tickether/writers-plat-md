@@ -37,12 +37,16 @@ ul.fileList {
   padding-left: 20px;
 }
 
-.closed li {
+.children.hidden {
   display: none;
 }
 
 .closed .dropArea {
   display: none;
+}
+
+.children {
+  padding-left: 15px;
 }
 
 span.arrow {
