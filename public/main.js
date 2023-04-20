@@ -166,7 +166,7 @@ function traverse(files) {
 
 //get array of files/folder directly in sub directory with same parent
 //files must but an array of the sub diretory only
-function moveFolder(files, droppedIndex, underIndex) {
+function moveUnder(files, droppedIndex, underIndex) {
   let newOrder = []
   let oldIndex
   let unIndex
@@ -197,43 +197,76 @@ function moveFolder(files, droppedIndex, underIndex) {
   }
 }
 
+function moveAbove(files, droppedIndex) {
+  let newOrder = []
+  let topIndex = 0
+  let oldIndex
+  let file
+  for (let i = 0; i < files.length; i++) {
+    
+    if (files[i].name === droppedIndex.name) {
+      oldIndex = i
+      file = files[i]
+      newOrder = files.splice(i, 1)
+    }
+  }
+  newOrder.splice((topIndex -1), 0, file)
+  //loop over new order with files names
+  for (let i = 0; i < newOrder.length; i++) {
+    if (newOrder.length === files.length) {
+      const newPath = files[i].path;
+      console.log("newPath", newPath);
 
-/*
-function movetoFolder (){
-
+      fs.renameSync(newOrder[i].path, newPath, (err) => {
+        if (err) throw err;
+      });
+    }
+  }
 }
-*/
+
 
 ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, droppedUnder, projRootPath, files) => {
-  const isProject = fs.existsSync(path.join(projRootPath, '.wrplat'))
-  const destinationArray = files
-  if (isProject) {
-    if (droppedUnder) {
-      console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
-    } else {
-      console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
-    }
-  } else {
-    const originPath = droppedItem.path
-    const destinationFolder = path.dirname(droppedOnItem.path)
-    let destinationPath = destinationFolder+'/'+droppedItem.name
-    // make sure path doesn't already exist and, if so, construct a new one
-    let i = 1
-    while (fs.existsSync(destinationPath)) {
-      if (droppedItem.directory) {
-        destinationPath = destinationFolder+'/'+droppedItem.name+' ' + i 
+  async function itemDropped( droppedItem, droppedOnItem, droppedUnder, projRootPath, files){
+    const isProject = fs.existsSync(path.join(projRootPath, '.wrplat'))
+    const destinationArray = files
+    
+    //get parent path
+    const parentDirectory = pathModule.dirname(droppedItem.path)
+    //get Specific array of files in folders
+    const _files = fs.readdirSync(parentDirectory).filter((item) => item !== '.wrplat')
+    console.log(_files)
+    
+    if (isProject) {
+      if (droppedUnder) {
+        console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
+        moveUnder(_files, droppedItem, droppedOnItem)
       } else {
-        destinationPath = destinationFolder+'/'+droppedItem.name.substr(0, droppedItem.name.lastIndexOf('.'))+' ' + i + '.'+droppedItem.name.substr(droppedItem.name.lastIndexOf('.') +1)
+        console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
+        moveAbove(_files, droppedItem)
       }
-      i++
+    } else {
+      const originPath = droppedItem.path
+      const destinationFolder = path.dirname(droppedOnItem.path)
+      let destinationPath = destinationFolder+'/'+droppedItem.name
+      // make sure path doesn't already exist and, if so, construct a new one
+      let i = 1
+      while (fs.existsSync(destinationPath)) {
+        if (droppedItem.directory) {
+          destinationPath = destinationFolder+'/'+droppedItem.name+' ' + i 
+        } else {
+          destinationPath = destinationFolder+'/'+droppedItem.name.substr(0, droppedItem.name.lastIndexOf('.'))+' ' + i + '.'+droppedItem.name.substr(droppedItem.name.lastIndexOf('.') +1)
+        }
+        i++
+      }
+      // copy to now loaction
+      fsExtra.copySync(originPath, destinationPath)
+      // delete from old location
+      fsExtra.rmSync(originPath, { recursive: true })
+      console.log("This root folder is not a Writer's Plat project.", destinationFolder)
     }
-    // copy to now loaction
-    fsExtra.copySync(originPath, destinationPath)
-    // delete from old location
-    fsExtra.rmSync(originPath, { recursive: true })
-    console.log("This root folder is not a Writer's Plat project.", destinationFolder)
   }
-  const result = 'Success!'
+  
+  const result = await itemDropped(droppedItem, droppedOnItem, droppedUnder, projRootPath, files)
   return result
   // movetoFolder(data, droppedItem, underItem)
 })
