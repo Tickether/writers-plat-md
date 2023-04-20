@@ -4,6 +4,7 @@ const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
 require('@electron/remote/main').initialize()
 
 const fs = require('fs');
+const fsExtra = require('fs-extra')
 const path = require('path')
 
 const isDev = require("electron-is-dev")
@@ -213,8 +214,27 @@ ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, dropped
       console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
     }
   } else {
-    console.log("This root folder is not a Writer's Plat project.")
+    const originPath = droppedItem.path
+    const destinationFolder = path.dirname(droppedOnItem.path)
+    let destinationPath = destinationFolder+'/'+droppedItem.name
+    // make sure path doesn't already exist and, if so, construct a new one
+    let i = 1
+    while (fs.existsSync(destinationPath)) {
+      if (droppedItem.directory) {
+        destinationPath = destinationFolder+'/'+droppedItem.name+' ' + i 
+      } else {
+        destinationPath = destinationFolder+'/'+droppedItem.name.substr(0, droppedItem.name.lastIndexOf('.'))+' ' + i + '.'+droppedItem.name.substr(droppedItem.name.lastIndexOf('.') +1)
+      }
+      i++
+    }
+    // copy to now loaction
+    fsExtra.copySync(originPath, destinationPath)
+    // delete from old location
+    fsExtra.rmSync(originPath, { recursive: true })
+    console.log("This root folder is not a Writer's Plat project.", destinationFolder)
   }
+  const result = 'Success!'
+  return result
   // movetoFolder(data, droppedItem, underItem)
 })
 

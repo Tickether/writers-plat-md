@@ -113,10 +113,34 @@ export function FileListMap({ data, activeItems, setActiveItems, projRootPath, s
           <span className="ItemName">{item.name}</span>
         </span>
       </li>
-      {item.directory && (
+      {item.directory && (item.children.length > 0 ? (
         <div className={openFolders.includes(item.path) ? "children" : "children hidden" }>
           {renderItems(item.children, `${parentIndex}.${index}`)}
         </div>
+      ) : 
+      <span
+            // drop area for the top level of an open folder
+            className="dropArea"
+            // prevent default here allows the item to have something droppe don it, otherwise nothing will happen when you drop here
+            onDragOver={event => {event.preventDefault();}}
+            // drag enter and leave allow the hover even to occur (normal css :hover is disabled during drag)
+            onDragEnter={event => {event.currentTarget.classList.toggle('dropActive')}}
+            onDragLeave={event => {event.currentTarget.classList.toggle('dropActive')}}
+            // onDrop this function is called. event data transfer provides the data from the dragged item to this function. JSON parse is needed to egt JSON string back to array
+            onDrop={(event) => {
+              const droppedItem = JSON.parse(event.dataTransfer.getData("item")); 
+              event.currentTarget.classList.toggle('dropActive')
+              // this is to deal with the case where there is an empty folder and still allow dropping into it. I've added this dummy item so that we can drop under it (thus avoiding potentiall trying to rename this, although I don't think that would happen anyway)
+              const dummyItem = {
+                name: 'dummyItem',
+                path: item.path+'/dummyItem.md',
+                children: []
+              }
+              // console.log('Dropped named: ', droppedItem.name, 'ABOVE: ', item.name)
+              dropFunction(droppedItem, dummyItem, true, projRootPath)
+              // console.log('dropFunction called')
+            }}
+      ></span>
       )}
       <span
       key={item.name+'dropBelow'}
