@@ -53,6 +53,7 @@ export function FileListMap({ data, activeItems, setActiveItems, projRootPath, s
 
   const dropFunction = (droppedItem, droppedOnItem, droppedUnder, projRootPath) => {
     ipcRenderer.invoke('item-dropped', droppedItem, droppedOnItem, droppedUnder, projRootPath, data).then((result) => {
+      setPath(_default)
       setPath(projRootPath)
     })
     // console.log('dropFunction sent command to main')
@@ -233,7 +234,6 @@ function Sidebar({ activeItems, setActiveItems }) {
   //   [path]
   // )
   console.log(files)
-
   
   useEffect(() => {
     //filter project file from path //NB: didnt use file here cos files show .md and folder will always return zero
