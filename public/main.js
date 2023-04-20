@@ -167,35 +167,69 @@ function traverse(files) {
 //get array of files/folder directly in sub directory with same parent
 //files must but an array of the sub diretory only
 function moveUnder(files, droppedIndex, underIndex) {
-  let newOrder = []
-  let oldIndex
+  
+  const parentDirectory = path.dirname(droppedIndex.path)
+  const _files = fs.readdirSync(parentDirectory)
+  .filter((item) => item !== '.wrplat')
+  .map((file) => {
+    const filePath = path.join(parentDirectory, file).replaceAll('\\', '/');
+    return {
+      name: file,
+      path: filePath,
+    };
+  })
+  let newOrder = files
+  let tempOrder = []
   let unIndex
   let file
   for (let i = 0; i < files.length; i++) {
     
     if (files[i].name === droppedIndex.name) {
-      oldIndex = i
-      file = files[i]
-      newOrder = files.splice(i, 1)
+      file = newOrder[i]
+      newOrder.splice(i, 1)
+      console.log('new order: ', newOrder)
     }
     if (files[i].name === underIndex.name) {
-      unIndex = i
-    }
+      unIndex = i+1
+      console.log(i)
+    } //
   }
-  newOrder.splice((unIndex -1), 0, file)
-  //loop over new order with files names
+  newOrder.splice(unIndex, 0, file)
+  
   for (let i = 0; i < newOrder.length; i++) {
     if (newOrder.length === files.length) {
-      const newPath = files[i].path;
-      console.log("newPath", newPath);
+      const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
+      tempOrder.push(newPath)
+      console.log("newPath", newPath, ':', newOrder[i].path);
 
-      fs.renameSync(newOrder[i].path, newPath, (err) => {
+      fs.rename(newOrder[i].path, newPath,  (err) => {
         if (err) throw err;
       });
     }
     
   }
+
+  console.log('new order2: ', newOrder)
+  console.log('old order2: ', _files)
+  console.log('old order2: ', tempOrder)
+  
+  //loop over new order with files names
+  
+  for (let i = 0; i < _files.length; i++) {
+    if (tempOrder.length === _files.length) {
+      const newPath = _files[i].path;
+      console.log("newPath", newPath, ':', newOrder[i].path);
+
+      fs.rename(tempOrder[i], newPath,  (err) => {
+        if (err) throw err;
+      });
+    }
+    
+  }
+
 }
+
+
 
 function moveAbove(files, droppedIndex) {
   let newOrder = []
@@ -203,7 +237,6 @@ function moveAbove(files, droppedIndex) {
   let oldIndex
   let file
   for (let i = 0; i < files.length; i++) {
-    
     if (files[i].name === droppedIndex.name) {
       oldIndex = i
       file = files[i]
@@ -231,18 +264,27 @@ ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, dropped
     const destinationArray = files
     
     //get parent path
-    const parentDirectory = pathModule.dirname(droppedItem.path)
+    const parentDirectory = path.dirname(droppedItem.path)
     //get Specific array of files in folders
-    const _files = fs.readdirSync(parentDirectory).filter((item) => item !== '.wrplat')
-    console.log(_files)
+    const _files = fs.readdirSync(parentDirectory)
+    .filter((item) => item !== '.wrplat')
+    .map((file) => {
+      const filePath = path.join(parentDirectory, file).replaceAll('\\', '/');
+      return {
+        name: file,
+        path: filePath,
+      };
+    })
+    //console.log(_files)
     
     if (isProject) {
       if (droppedUnder) {
         console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
+        //console.log(_files)
         moveUnder(_files, droppedItem, droppedOnItem)
       } else {
         console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
-        moveAbove(_files, droppedItem)
+        //moveAbove(_files, droppedItem)
       }
     } else {
       const originPath = droppedItem.path
