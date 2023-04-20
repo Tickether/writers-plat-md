@@ -166,23 +166,84 @@ function traverse(files) {
 
 //get array of files/folder directly in sub directory with same parent
 //files must but an array of the sub diretory only
-function moveFolder(files, droppedIndex, underIndex) {
-  let newOrder = []
-  let oldIndex
+function moveUnder(files, droppedIndex, underIndex) {
+  
+  const parentDirectory = path.dirname(droppedIndex.path)
+  const _files = fs.readdirSync(parentDirectory)
+  .filter((item) => item !== '.wrplat')
+  .map((file) => {
+    const filePath = path.join(parentDirectory, file).replaceAll('\\', '/');
+    return {
+      name: file,
+      path: filePath,
+    };
+  })
+  let newOrder = files
+  let tempOrder = []
   let unIndex
   let file
   for (let i = 0; i < files.length; i++) {
     
     if (files[i].name === droppedIndex.name) {
+      file = newOrder[i]
+      newOrder.splice(i, 1)
+      console.log('new order: ', newOrder)
+    }
+    if (files[i].name === underIndex.name) {
+      unIndex = i+1
+      console.log(i)
+    } //
+  }
+  newOrder.splice(unIndex, 0, file)
+  
+  for (let i = 0; i < newOrder.length; i++) {
+    if (newOrder.length === files.length) {
+      const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
+      tempOrder.push(newPath)
+      console.log("newPath", newPath, ':', newOrder[i].path);
+
+      fs.rename(newOrder[i].path, newPath,  (err) => {
+        if (err) throw err;
+      });
+    }
+    
+  }
+
+  console.log('new order2: ', newOrder)
+  console.log('old order2: ', _files)
+  console.log('old order2: ', tempOrder)
+  
+  //loop over new order with files names
+  
+  for (let i = 0; i < _files.length; i++) {
+    if (tempOrder.length === _files.length) {
+      const newPath = _files[i].path;
+      console.log("newPath", newPath, ':', newOrder[i].path);
+
+      fs.rename(tempOrder[i], newPath,  (err) => {
+        if (err) throw err;
+      });
+    }
+    
+  }
+
+}
+
+
+
+function moveAbove(files, droppedIndex) {
+  let newOrder = []
+  let topIndex = 0
+  let oldIndex
+  let file
+  for (let i = 0; i < files.length; i++) {
+    if (files[i].name === droppedIndex.name) {
       oldIndex = i
       file = files[i]
       newOrder = files.splice(i, 1)
     }
-    if (files[i].name === underIndex.name) {
-      unIndex = i
-    }
   }
-  newOrder.splice((unIndex -1), 0, file)
+  newOrder.splice((topIndex -1), 0, file)
   //loop over new order with files names
   for (let i = 0; i < newOrder.length; i++) {
     if (newOrder.length === files.length) {
@@ -193,47 +254,61 @@ function moveFolder(files, droppedIndex, underIndex) {
         if (err) throw err;
       });
     }
-    
   }
 }
 
-
-/*
-function movetoFolder (){
-
-}
-*/
 
 ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, droppedUnder, projRootPath, files) => {
-  const isProject = fs.existsSync(path.join(projRootPath, '.wrplat'))
-  const destinationArray = files
-  if (isProject) {
-    if (droppedUnder) {
-      console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
-    } else {
-      console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
-    }
-  } else {
-    const originPath = droppedItem.path
-    const destinationFolder = path.dirname(droppedOnItem.path)
-    let destinationPath = destinationFolder+'/'+droppedItem.name
-    // make sure path doesn't already exist and, if so, construct a new one
-    let i = 1
-    while (fs.existsSync(destinationPath)) {
-      if (droppedItem.directory) {
-        destinationPath = destinationFolder+'/'+droppedItem.name+' ' + i 
+  async function itemDropped( droppedItem, droppedOnItem, droppedUnder, projRootPath, files){
+    const isProject = fs.existsSync(path.join(projRootPath, '.wrplat'))
+    const destinationArray = files
+    
+    //get parent path
+    const parentDirectory = path.dirname(droppedItem.path)
+    //get Specific array of files in folders
+    const _files = fs.readdirSync(parentDirectory)
+    .filter((item) => item !== '.wrplat')
+    .map((file) => {
+      const filePath = path.join(parentDirectory, file).replaceAll('\\', '/');
+      return {
+        name: file,
+        path: filePath,
+      };
+    })
+    //console.log(_files)
+    
+    if (isProject) {
+      if (droppedUnder) {
+        console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
+        //console.log(_files)
+        moveUnder(_files, droppedItem, droppedOnItem)
       } else {
-        destinationPath = destinationFolder+'/'+droppedItem.name.substr(0, droppedItem.name.lastIndexOf('.'))+' ' + i + '.'+droppedItem.name.substr(droppedItem.name.lastIndexOf('.') +1)
+        console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
+        //moveAbove(_files, droppedItem)
       }
-      i++
+    } else {
+      const originPath = droppedItem.path
+      const destinationFolder = path.dirname(droppedOnItem.path)
+      let destinationPath = destinationFolder+'/'+droppedItem.name
+      // make sure path doesn't already exist and, if so, construct a new one
+      let i = 1
+      while (fs.existsSync(destinationPath)) {
+        if (droppedItem.directory) {
+          destinationPath = destinationFolder+'/'+droppedItem.name+' ' + i 
+        } else {
+          destinationPath = destinationFolder+'/'+droppedItem.name.substr(0, droppedItem.name.lastIndexOf('.'))+' ' + i + '.'+droppedItem.name.substr(droppedItem.name.lastIndexOf('.') +1)
+        }
+        i++
+      }
+      // copy to now loaction
+      fsExtra.copySync(originPath, destinationPath)
+      // delete from old location
+      fsExtra.rmSync(originPath, { recursive: true })
+      console.log("This root folder is not a Writer's Plat project.", destinationFolder)
     }
-    // copy to now loaction
-    fsExtra.copySync(originPath, destinationPath)
-    // delete from old location
-    fsExtra.rmSync(originPath, { recursive: true })
-    console.log("This root folder is not a Writer's Plat project.", destinationFolder)
   }
-  const result = 'Success!'
+  
+  const result = await itemDropped(droppedItem, droppedOnItem, droppedUnder, projRootPath, files)
   return result
   // movetoFolder(data, droppedItem, underItem)
 })
