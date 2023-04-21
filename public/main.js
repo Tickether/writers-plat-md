@@ -211,10 +211,10 @@ function moveUnder(files, droppedIndex, underIndex) {
     }
     files_.splice(unIndex, 0, file)
     console.log(files_)
-    /*
+    
     for (let i = 0; i < newOrder.length; i++) {
       if (newOrder.length === files.length) {
-        const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
+        const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
         tempOrder.push(newPath)
         console.log("newPath", newPath, ':', newOrder[i].path);
   
@@ -223,7 +223,18 @@ function moveUnder(files, droppedIndex, underIndex) {
         });
       }
     }
-    */
+    console.log('old order1: ', tempOrder)
+    tempOrder = []
+    for (let i = 0; i < files_.length; i++) {
+      const newPath = `${parentUnderDirectory}/${i}#${files_[i].name.slice(2)}` //files_[i].path.replace(files_[i].name, `${i}#${files_[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
+      tempOrder.push(newPath)
+      console.log("newPath", newPath, ':', files_[i].path);
+
+      fs.rename(files_[i].path, newPath,  (err) => {
+        if (err) throw err;
+      });
+    }
+    
   
     console.log('new order2: ', newOrder)
     console.log('old order2: ', _files)
