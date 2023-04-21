@@ -201,13 +201,12 @@ function moveUnder(files, droppedIndex, underIndex) {
         console.log('new order: ', newOrder)
       }
 
-    for (let i = 0; i < files_.length; i++) {
-      if (files_[i].name === underIndex.name) {
-        unIndex = i+1
-        console.log(i)
-      } //
-    }
-      
+      for (let i = 0; i < files_.length; i++) {
+        if (files_[i].name === underIndex.name) {
+          unIndex = i+1
+          console.log(i)
+        } //
+      }  
     }
     files_.splice(unIndex, 0, file)
     console.log(files_)
@@ -312,26 +311,78 @@ function moveUnder(files, droppedIndex, underIndex) {
 function moveAbove(files, droppedIndex, underIndex) {
   const parentDirectory = path.dirname(droppedIndex.path)
   const parentUnderDirectory = path.dirname(underIndex.path)
-  let newOrder = []
+  const files_ = fs.readdirSync(parentUnderDirectory)
+  .filter((item) => item !== '.wrplat')
+  .map((file) => {
+    const filePath = path.join(parentUnderDirectory, file).replaceAll('\\', '/');
+    return {
+      name: file,
+      path: filePath,
+    };
+  })
+  let newOrder = files
   let topIndex = 0
-  let oldIndex
+  //let oldIndex
   let file
 
-  if (parentDirectory === parentUnderDirectory) {
+  if (parentDirectory !== parentUnderDirectory) {
+    for (let i = 0; i < files.length; i++) {
+    
+      if (files[i].name === droppedIndex.name) {
+        file = newOrder[i]
+        newOrder.splice(i, 1)
+        console.log('new order: ', newOrder)
+      }
+      /*
+      for (let i = 0; i < files_.length; i++) {
+        if (files_[i].name === underIndex.name) {
+          unIndex = i+1
+          console.log(i)
+        } //
+      }
+      */
+    }
+    files_.splice((topIndex), 0, file)
+    console.log(files_)
+    
+    for (let i = 0; i < newOrder.length; i++) {
+      if (newOrder.length === files.length) {
+        const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
+        //tempOrder.push(newPath)
+        console.log("newPath", newPath, ':', newOrder[i].path);
+  
+        fs.rename(newOrder[i].path, newPath,  (err) => {
+          if (err) throw err;
+        });
+      }
+    }
+    //console.log('old order1: ', tempOrder)
+    //tempOrder = []
+    for (let i = 0; i < files_.length; i++) {
+      const newPath = `${parentUnderDirectory}/${i}#${files_[i].name.slice(2)}` //files_[i].path.replace(files_[i].name, `${i}#${files_[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
+      //tempOrder.push(newPath)
+      console.log("newPath", newPath, ':', files_[i].path);
+
+      fs.rename(files_[i].path, newPath,  (err) => {
+        if (err) throw err;
+      });
+    }
+    
+
     
   } else {
     for (let i = 0; i < files.length; i++) {
       if (files[i].name === droppedIndex.name) {
-        oldIndex = i
-        file = files[i]
-        newOrder = files.splice(i, 1)
+        //oldIndex = i
+        file = newOrder[i]
+        newOrder.splice(i, 1)
       }
     }
-    newOrder.splice((topIndex -1), 0, file)
+    newOrder.splice((topIndex), 0, file)
     //loop over new order with files names
     for (let i = 0; i < newOrder.length; i++) {
       if (newOrder.length === files.length) {
-        const newPath = files[i].path;
+        const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
         console.log("newPath", newPath);
   
         fs.renameSync(newOrder[i].path, newPath, (err) => {
@@ -339,6 +390,9 @@ function moveAbove(files, droppedIndex, underIndex) {
         });
       }
     }
+    console.log('new order2: ', newOrder)
+    //console.log('old order2: ', _files)
+    //console.log('old order2: ', tempOrder)
   }
 
   
@@ -372,7 +426,7 @@ ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, dropped
         moveUnder(_files, droppedItem, droppedOnItem)
       } else {
         console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
-        //moveAbove(_files, droppedItem)
+        moveAbove(_files, droppedItem, droppedOnItem)
       }
     } else {
       const originPath = droppedItem.path
