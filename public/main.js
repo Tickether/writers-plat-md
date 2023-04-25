@@ -167,10 +167,10 @@ function traverse(files) {
 //get array of files/folder directly in sub directory with same parent
 //files must but an array of the sub diretory only
 function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath) {
-  console.log('move under triggered')
+  //move dagged item to a temp folder
   fsExtra.copySync(droppedItem.path, projRootPath+'/.tmp/'+droppedItem.name)
-  // delete from old location
   fsExtra.rmSync(droppedItem.path, { recursive: true })
+  //rename the new location from the last item to the location the dragged item is to be dropped (unless the new location has no other items, in that case I skip this step)
   if (newArrayToRename.length > 0) {
     for (let i = newArrayToRename.length - 1; i>=newIndex; i--) {
       const baseName = newArrayToRename[i].name.split('#')[1]
@@ -178,20 +178,21 @@ function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppe
       const newItemIndex = i+1
       const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
       fsExtra.copySync(oldPath, newPath)
-      // delete from old location
       fsExtra.rmSync(oldPath, { recursive: true })
     }
   }
-  console.log('for loop ended. newIndex: ', String(newIndex), typeof(newIndex))
+  // Rename the dragged item and place in the now-empty slot in the new location
   const droppedItemBaseName = droppedItem.name.split('#')[1]
   const droppedItemNewPath = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/')) + '/' + newIndex + '#' + droppedItemBaseName
   fsExtra.copySync(projRootPath+'/.tmp/'+droppedItem.name, droppedItemNewPath)
-  // delete from old location
   fsExtra.rmSync(projRootPath+'/.tmp', { recursive: true })
+  //Check if the item was shifted 'up' in the folder structure, if so, the old location's array may have the wrong pathnames now
   const shiftedUp = droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/')).includes(droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/')))
+  //rename items in old folder starting from the empty slot made by shifting the dragged item
   for (let i = oldIndex+1; i<= oldArrayToRename.length - 1;  i++) {
     console.log('renaming old array', i)
     const baseName = oldArrayToRename[i].name.split('#')[1]
+    //If the item was dragged 'up' in the folder tree there's an extra step to change an index on one of the folders in the pathname
     if (shiftedUp) {
       const startOfPath = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/'))
       const folderNameToAdjust = droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/')).replace(startOfPath, '')
@@ -205,7 +206,6 @@ function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppe
       const newItemIndex = i-1
       const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
       fsExtra.copySync(oldPath, newPath)
-      // delete from old location
       fsExtra.rmSync(oldPath, { recursive: true })
     } else {
       let oldPath = oldArrayToRename[i].path
@@ -213,7 +213,6 @@ function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppe
       const newItemIndex = i-1
       const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
       fsExtra.copySync(oldPath, newPath)
-      // delete from old location
       fsExtra.rmSync(oldPath, { recursive: true })
     }
   }
@@ -226,6 +225,7 @@ ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, dropped
     const isProject = fs.existsSync(path.join(projRootPath, '.wrplat'))
     const newFolder = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/'))
     const newFileList = fs.readdirSync(newFolder, { withFileTypes: true });
+    // Create array for each folder to be renamed
     const newArrayToRename = newFileList
       .filter(s => s.isDirectory() || s.name.endsWith('.md'))
       .map((file) => {
@@ -252,8 +252,9 @@ ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, dropped
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
-    
+    // handle renaming differently for projects vs normal folders
     if (isProject) {
+      //set different index for if the item was drop over or under (if dropped under, the item that was dropped on doesn't get renamed)
       if (droppedUnder) {
         console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
         const newIndex = parseInt(droppedOnItem.name.split('#')[0]) + 1
