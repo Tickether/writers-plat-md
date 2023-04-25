@@ -133,12 +133,12 @@ export function FileListMap({ data, activeItems, setActiveItems, projRootPath, s
               event.currentTarget.classList.toggle('dropActive')
               // this is to deal with the case where there is an empty folder and still allow dropping into it. I've added this dummy item so that we can drop under it (thus avoiding potentiall trying to rename this, although I don't think that would happen anyway)
               const dummyItem = {
-                name: 'dummyItem',
-                path: item.path+'/dummyItem.md',
+                name: '0#dummyItem',
+                path: item.path+'/0#dummyItem.md',
                 children: []
               }
               // console.log('Dropped named: ', droppedItem.name, 'ABOVE: ', item.name)
-              dropFunction(droppedItem, dummyItem, true, projRootPath)
+              dropFunction(droppedItem, dummyItem, false, projRootPath)
               // console.log('dropFunction called')
             }}
       ></span>

@@ -37,9 +37,20 @@ import {
 import { subscript, superscript } from "@bangle.dev/text-formatting";
 // import { frontMatter, FrontMatter,  } from './customNodes/frontMatter';
 import { useEffect, useState, useRef } from "react";
+import { remark } from 'remark';
 
+
+import {unified} from 'unified'
+import remarkParse from 'remark-parse'
+import remarkGfm from 'remark-gfm'
+import remarkRehype from 'remark-rehype'
+import rehypeStringify from 'rehype-stringify'
 const fs = window.require('fs')
 
+// let process = unified()
+//     .use(markdown)
+//     .use(frontmatter)
+//     .use(parseFrontmatter)
 
 const menuKey = new PluginKey("menuKey");
 
@@ -93,6 +104,17 @@ export function Editor({ activeItems }) {
     ],
   });
 
+  async function parseToJson(inputText) {
+    let parsedText = await unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkRehype)
+      .use(rehypeStringify)
+      .process(inputText)
+      console.log(parsedText)
+      return parsedText
+  }
+
   useEffect(() => {
     function getTextFromFile() {
       const activeItemsSorted = activeItems.sort((a,b) => a.localeCompare(b))
@@ -107,8 +129,8 @@ export function Editor({ activeItems }) {
     
       return Promise.all(promises).then(fileContents => {
         const text = fileContents.map(fc => fc.contents).join('\n--##--\n');
-        console.log(typeof(text))
-        return text;
+        const parsedText = parseToJson(text)
+        return parsedText;
       });
     }
 
@@ -116,7 +138,7 @@ export function Editor({ activeItems }) {
       if (editorRef.current) {
         const view = editorRef.current.view;
         view.dispatch(view.state.tr.replaceWith(0, view.state.doc.content.size, 
-        view.state.schema.text(text + " ")));
+        view.state.schema.node(text + "")));
       }
     }).catch(error => {
       console.error(error);

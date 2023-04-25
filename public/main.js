@@ -95,15 +95,15 @@ const traverse = useCallback((files) => {
 // make project files and folers binding them
 
 function traverse (files) {
-  function createNewFiles(files, parentIndex = "") {
+  function createNewFiles(files) {
     const newFiles = []
     files.forEach((item, index) =>{
-      const newName = `${parentIndex}${index}#${item.name}`;
+      const newName = `${index}#${item.name}`;
       const newPath = path.join(item.path.substr(0, item.path.lastIndexOf("/")), newName)
       const newItem = {
         name: newName,
         path: newPath,
-        children: item.children.length > 0 ? createNewFiles(item.children, parentIndex+index+'.') :[]
+        children: item.children.length > 0 ? createNewFiles(item.children) :[]
       }
       newFiles.push(newItem)
     })
@@ -166,267 +166,104 @@ function traverse(files) {
 
 //get array of files/folder directly in sub directory with same parent
 //files must but an array of the sub diretory only
-function moveUnder(files, droppedIndex, underIndex) {
-  const parentDirectory = path.dirname(droppedIndex.path)
-  const parentUnderDirectory = path.dirname(underIndex.path)
-  const _files = fs.readdirSync(parentDirectory)
-  .filter((item) => item !== '.wrplat')
-  .map((file) => {
-    const filePath = path.join(parentDirectory, file).replaceAll('\\', '/');
-    return {
-      name: file,
-      path: filePath,
-    };
-  })
-  const files_ = fs.readdirSync(parentUnderDirectory)
-  .filter((item) => item !== '.wrplat')
-  .map((file) => {
-    const filePath = path.join(parentUnderDirectory, file).replaceAll('\\', '/');
-    return {
-      name: file,
-      path: filePath,
-    };
-  })
-  let newOrder = files
-  let tempOrder = []
-  let unIndex
-  let file
-
-  if (parentDirectory !== parentUnderDirectory) {
-    for (let i = 0; i < files.length; i++) {
-    
-      if (files[i].name === droppedIndex.name) {
-        file = newOrder[i]
-        newOrder.splice(i, 1)
-        console.log('new order: ', newOrder)
-      }
-
-      for (let i = 0; i < files_.length; i++) {
-        if (files_[i].name === underIndex.name) {
-          unIndex = i+1
-          console.log(i)
-        } //
-      }  
+function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath) {
+  console.log('move under triggered')
+  fsExtra.copySync(droppedItem.path, projRootPath+'/.tmp/'+droppedItem.name)
+  // delete from old location
+  fsExtra.rmSync(droppedItem.path, { recursive: true })
+  if (newArrayToRename.length > 0) {
+    for (let i = newArrayToRename.length - 1; i>=newIndex; i--) {
+      const baseName = newArrayToRename[i].name.split('#')[1]
+      const oldPath = newArrayToRename[i].path
+      const newItemIndex = i+1
+      const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
+      fsExtra.copySync(oldPath, newPath)
+      // delete from old location
+      fsExtra.rmSync(oldPath, { recursive: true })
     }
-    files_.splice(unIndex, 0, file)
-    console.log(files_)
-    
-    for (let i = 0; i < newOrder.length; i++) {
-      if (newOrder.length === files.length) {
-        const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
-        tempOrder.push(newPath)
-        console.log("newPath", newPath, ':', newOrder[i].path);
-  
-        fs.rename(newOrder[i].path, newPath,  (err) => {
-          if (err) throw err;
-        });
-      }
-    }
-    console.log('old order1: ', tempOrder)
-    tempOrder = []
-    for (let i = 0; i < files_.length; i++) {
-      const newPath = `${parentUnderDirectory}/${i}#${files_[i].name.slice(2)}` //files_[i].path.replace(files_[i].name, `${i}#${files_[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
-      tempOrder.push(newPath)
-      console.log("newPath", newPath, ':', files_[i].path);
-
-      fs.rename(files_[i].path, newPath,  (err) => {
-        if (err) throw err;
-      });
-    }
-    
-  
-    console.log('new order2: ', newOrder)
-    console.log('old order2: ', _files)
-    console.log('old order2: ', tempOrder)
-
-    //loop over new order with files names
-    /*
-    for (let i = 0; i < _files.length; i++) {
-      if (tempOrder.length === _files.length) {
-        const newPath = _files[i].path;
-        console.log("newPath", newPath, ':', newOrder[i].path);
-  
-        fs.rename(tempOrder[i], newPath,  (err) => {
-          if (err) throw err;
-        });
-      }
-    }
-    */
-
-  } else {
-
-    for (let i = 0; i < files.length; i++) {
-    
-      if (files[i].name === droppedIndex.name) {
-        file = newOrder[i]
-        newOrder.splice(i, 1)
-        console.log('new order: ', newOrder)
-      }
-      if (files[i].name === underIndex.name) {
-        unIndex = i+1
-        console.log(i)
-      } //
-    }
-    newOrder.splice(unIndex, 0, file)
-
-    //loop over new order with files names
-    for (let i = 0; i < newOrder.length; i++) {
-      if (newOrder.length === files.length) {
-        const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
-        tempOrder.push(newPath)
-        console.log("newPath", newPath, ':', newOrder[i].path);
-        fs.rename(newOrder[i].path, newPath,  (err) => {
-          if (err) throw err;
-        }); 
-      }
-    }
-  
-    console.log('new order2: ', newOrder)
-    //console.log('old order2: ', _files)
-    console.log('old order2: ', tempOrder)
-    
-    //loop over new order with files names
-    /*
-    for (let i = 0; i < _files.length; i++) {
-      if (tempOrder.length === _files.length) {
-        const newPath = _files[i].path;
-        console.log("newPath", newPath, ':', newOrder[i].path);
-  
-        fs.rename(tempOrder[i], newPath,  (err) => {
-          if (err) throw err;
-        });
-      }
-    }
-    */
   }
-  
- 
-  
-  
-
+  console.log('for loop ended. newIndex: ', String(newIndex), typeof(newIndex))
+  const droppedItemBaseName = droppedItem.name.split('#')[1]
+  const droppedItemNewPath = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/')) + '/' + newIndex + '#' + droppedItemBaseName
+  fsExtra.copySync(projRootPath+'/.tmp/'+droppedItem.name, droppedItemNewPath)
+  // delete from old location
+  fsExtra.rmSync(projRootPath+'/.tmp', { recursive: true })
+  const shiftedUp = droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/')).includes(droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/')))
+  for (let i = oldIndex+1; i<= oldArrayToRename.length - 1;  i++) {
+    console.log('renaming old array', i)
+    const baseName = oldArrayToRename[i].name.split('#')[1]
+    if (shiftedUp) {
+      const startOfPath = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/'))
+      const folderNameToAdjust = droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/')).replace(startOfPath, '')
+      const isolateIndex = folderNameToAdjust.split(/#(.*)/s)
+      console.log(isolateIndex)
+      const newFolderIndex = parseInt(isolateIndex[0].substr(1))+1
+      console.log(isolateIndex[0], typeof(isolateIndex[0]))
+      const oldName = oldArrayToRename[i].name
+      let oldPath = startOfPath + '/' + newFolderIndex + '#' + isolateIndex[1] + '/' + oldName
+      console.log(oldPath)
+      const newItemIndex = i-1
+      const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
+      fsExtra.copySync(oldPath, newPath)
+      // delete from old location
+      fsExtra.rmSync(oldPath, { recursive: true })
+    } else {
+      let oldPath = oldArrayToRename[i].path
+      console.log(oldPath)
+      const newItemIndex = i-1
+      const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
+      fsExtra.copySync(oldPath, newPath)
+      // delete from old location
+      fsExtra.rmSync(oldPath, { recursive: true })
+    }
+  }
 }
 
-
-
-function moveAbove(files, droppedIndex, underIndex) {
-  const parentDirectory = path.dirname(droppedIndex.path)
-  const parentUnderDirectory = path.dirname(underIndex.path)
-  const files_ = fs.readdirSync(parentUnderDirectory)
-  .filter((item) => item !== '.wrplat')
-  .map((file) => {
-    const filePath = path.join(parentUnderDirectory, file).replaceAll('\\', '/');
-    return {
-      name: file,
-      path: filePath,
-    };
-  })
-  let newOrder = files
-  let topIndex = 0
-  //let oldIndex
-  let file
-
-  if (parentDirectory !== parentUnderDirectory) {
-    for (let i = 0; i < files.length; i++) {
-    
-      if (files[i].name === droppedIndex.name) {
-        file = newOrder[i]
-        newOrder.splice(i, 1)
-        console.log('new order: ', newOrder)
-      }
-      /*
-      for (let i = 0; i < files_.length; i++) {
-        if (files_[i].name === underIndex.name) {
-          unIndex = i+1
-          console.log(i)
-        } //
-      }
-      */
-    }
-    files_.splice((topIndex), 0, file)
-    console.log(files_)
-    
-    for (let i = 0; i < newOrder.length; i++) {
-      if (newOrder.length === files.length) {
-        const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
-        //tempOrder.push(newPath)
-        console.log("newPath", newPath, ':', newOrder[i].path);
-  
-        fs.rename(newOrder[i].path, newPath,  (err) => {
-          if (err) throw err;
-        });
-      }
-    }
-    //console.log('old order1: ', tempOrder)
-    //tempOrder = []
-    for (let i = 0; i < files_.length; i++) {
-      const newPath = `${parentUnderDirectory}/${i}#${files_[i].name.slice(2)}` //files_[i].path.replace(files_[i].name, `${i}#${files_[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
-      //tempOrder.push(newPath)
-      console.log("newPath", newPath, ':', files_[i].path);
-
-      fs.rename(files_[i].path, newPath,  (err) => {
-        if (err) throw err;
-      });
-    }
-    
-
-    
-  } else {
-    for (let i = 0; i < files.length; i++) {
-      if (files[i].name === droppedIndex.name) {
-        //oldIndex = i
-        file = newOrder[i]
-        newOrder.splice(i, 1)
-      }
-    }
-    newOrder.splice((topIndex), 0, file)
-    //loop over new order with files names
-    for (let i = 0; i < newOrder.length; i++) {
-      if (newOrder.length === files.length) {
-        const newPath = newOrder[i].path.replace(newOrder[i].name, `${i}#${newOrder[i].name.slice(2)}`); //file.path.replace(file.name, 'newFOOL') //`${parentIndex}${index}#${item.name}`
-        console.log("newPath", newPath);
-  
-        fs.renameSync(newOrder[i].path, newPath, (err) => {
-          if (err) throw err;
-        });
-      }
-    }
-    console.log('new order2: ', newOrder)
-    //console.log('old order2: ', _files)
-    //console.log('old order2: ', tempOrder)
-  }
-
-  
-  
-}
 
 
 ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, droppedUnder, projRootPath, files) => {
   async function itemDropped( droppedItem, droppedOnItem, droppedUnder, projRootPath, files){
     const isProject = fs.existsSync(path.join(projRootPath, '.wrplat'))
-    const destinationArray = files
-    
-    //get parent path
-    const parentDirectory = path.dirname(droppedItem.path)
-    //get Specific array of files in folders
-    const _files = fs.readdirSync(parentDirectory)
-    .filter((item) => item !== '.wrplat')
-    .map((file) => {
-      const filePath = path.join(parentDirectory, file).replaceAll('\\', '/');
-      return {
-        name: file,
-        path: filePath,
-      };
-    })
-    //console.log(_files)
+    const newFolder = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/'))
+    const newFileList = fs.readdirSync(newFolder, { withFileTypes: true });
+    const newArrayToRename = newFileList
+      .filter(s => s.isDirectory() || s.name.endsWith('.md'))
+      .map((file) => {
+        const filePath = path.join(newFolder, file.name).replaceAll('\\', '/');
+        const isDirectory = file.isDirectory();
+        return {
+          name: file.name,
+          path: filePath,
+          directory: isDirectory,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const oldFolder = droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/'))
+    const oldFileList = fs.readdirSync(oldFolder, { withFileTypes: true });
+    const oldArrayToRename = oldFileList
+      .filter(s => s.isDirectory() || s.name.endsWith('.md'))
+      .map((file) => {
+        const filePath = path.join(oldFolder, file.name).replaceAll('\\', '/');
+        const isDirectory = file.isDirectory();
+        return {
+          name: file.name,
+          path: filePath,
+          directory: isDirectory,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
     
     if (isProject) {
       if (droppedUnder) {
         console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
-        //console.log(_files)
-        moveUnder(_files, droppedItem, droppedOnItem)
+        const newIndex = parseInt(droppedOnItem.name.split('#')[0]) + 1
+        const oldIndex = parseInt(droppedItem.name.split('#')[0])
+        console.log(newIndex, oldIndex)
+        moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath)
       } else {
-        console.log(droppedItem.name, ' dropped above', droppedOnItem.name)
-        moveAbove(_files, droppedItem, droppedOnItem)
+        const newIndex = parseInt(droppedOnItem.name.split('#')[0])
+        const oldIndex = parseInt(droppedItem.name.split('#')[0])
+        moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath)
       }
     } else {
       const originPath = droppedItem.path

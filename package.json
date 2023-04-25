@@ -24,6 +24,13 @@
     "react-draggable": "^4.4.5",
     "react-icons": "^4.8.0",
     "react-scripts": "4.0.3",
+    "rehype-stringify": "^9.0.3",
+    "remark": "^14.0.2",
+    "remark-frontmatter": "^4.0.1",
+    "remark-gfm": "^3.0.1",
+    "remark-parse-yaml": "^0.0.3",
+    "remark-rehype": "^10.1.0",
+    "unified": "^10.1.2",
     "wait-on": "^7.0.1"
   },
   "devDependencies": {
