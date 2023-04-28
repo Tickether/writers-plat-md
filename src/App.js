@@ -8,11 +8,12 @@ import { useState } from 'react'
 
 function App() {
   const [activeItems, setActiveItems] = useState([]);
+  const [openFolders, setOpenFolders] = useState([]);
 
   return (
     <div className="App">
       <div className="sidebar">
-        <Sidebar activeItems={activeItems} setActiveItems={setActiveItems} />
+        <Sidebar activeItems={activeItems} setActiveItems={setActiveItems} openFolders={openFolders} setOpenFolders={setOpenFolders} />
       </div>
       <div className="editor-area">
         <Editor activeItems={activeItems} />

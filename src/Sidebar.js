@@ -28,8 +28,7 @@ if (!fs.existsSync(_default)) {
 }
 
 // Template for the list of files presented in sidebar when a folder is chosen.
-export function FileListMap({ data, activeItems, setActiveItems, projRootPath, setPath }) {
-  const [openFolders, setOpenFolders] = useState([]);
+export function FileListMap({ data, activeItems, setActiveItems, projRootPath, setPath, openFolders, setOpenFolders }) {
 
   const toggleFolder = (folder,e) => {
     e.stopPropagation();
@@ -52,9 +51,16 @@ export function FileListMap({ data, activeItems, setActiveItems, projRootPath, s
   };
 
   const dropFunction = (droppedItem, droppedOnItem, droppedUnder, projRootPath) => {
-    ipcRenderer.invoke('item-dropped', droppedItem, droppedOnItem, droppedUnder, projRootPath, data).then((result) => {
+    ipcRenderer.invoke('item-dropped', droppedItem, droppedOnItem, droppedUnder, projRootPath, data, openFolders).then((result) => {
+      console.log('from sidebar. Result = ', result)
       setPath(_default)
       setPath(projRootPath)
+      setOpenFolders([])
+      if (result.length > 0) {
+        console.log('triggerer setOpenFolders')
+        setOpenFolders(result)
+      }
+      console.log(openFolders)
     })
     // console.log('dropFunction sent command to main')
   }
@@ -169,7 +175,7 @@ export function FileListMap({ data, activeItems, setActiveItems, projRootPath, s
 
 
 
-function Sidebar({ activeItems, setActiveItems }) {
+function Sidebar({ activeItems, setActiveItems, openFolders, setOpenFolders }) {
   const [
     path, 
     setPath
@@ -279,7 +285,7 @@ function Sidebar({ activeItems, setActiveItems }) {
     <>
     <span className="pathTitle">{pathModule.basename(path)}</span>
     <ul className="fileList">
-      <FileListMap data={files} activeItems={activeItems} setActiveItems={setActiveItems} projRootPath={path} setPath={setPath} />
+      <FileListMap data={files} activeItems={activeItems} setActiveItems={setActiveItems} projRootPath={path} setPath={setPath} openFolders={openFolders} setOpenFolders={setOpenFolders} />
     </ul>
     </>
     }

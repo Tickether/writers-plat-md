@@ -140,33 +140,13 @@ function traverse (files) {
   // setPath(path)
 }
 
-/*
-function traverse(files) {
-  files.forEach((item, index) => {
-    if (item.directory === true) {
-      traverse(item.children);
-    }
-
-    const newName = item.directory
-      ? `Folder ${index + 1}`
-      : `File ${index + 1}${path.extname(item.name)}`;
-    console.log("newName", newName);
-
-    const newPath = item.path.replace(item.name, newName);
-    console.log("newPath", newPath);
-
-    fs.renameSync(item.path, newPath, (err) => {
-      if (err) throw err;
-    });
-  });
-}
-*/
-
 
 
 //get array of files/folder directly in sub directory with same parent
 //files must but an array of the sub diretory only
-function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath) {
+function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath, openFolders) {
+  console.log(openFolders)
+  let newOpenFolders = openFolders
   //move dagged item to a temp folder
   fsExtra.copySync(droppedItem.path, projRootPath+'/.tmp/'+droppedItem.name)
   fsExtra.rmSync(droppedItem.path, { recursive: true })
@@ -179,6 +159,11 @@ function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppe
       const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
       fsExtra.copySync(oldPath, newPath)
       fsExtra.rmSync(oldPath, { recursive: true })
+      if (openFolders.includes(oldPath)) {
+        for (let i = 0; i < newOpenFolders.length; i++) {
+          newOpenFolders[i] = newOpenFolders[i].replace(oldPath, newPath);
+        }
+      }
     }
   }
   // Rename the dragged item and place in the now-empty slot in the new location
@@ -190,38 +175,93 @@ function moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppe
   const shiftedUp = droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/')).includes(droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/')))
   //rename items in old folder starting from the empty slot made by shifting the dragged item
   for (let i = oldIndex+1; i<= oldArrayToRename.length - 1;  i++) {
-    console.log('renaming old array', i)
     const baseName = oldArrayToRename[i].name.split('#')[1]
     //If the item was dragged 'up' in the folder tree there's an extra step to change an index on one of the folders in the pathname
     if (shiftedUp) {
       const startOfPath = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/'))
       const folderNameToAdjust = droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/')).replace(startOfPath, '')
       const isolateIndex = folderNameToAdjust.split(/#(.*)/s)
-      console.log(isolateIndex)
       const newFolderIndex = parseInt(isolateIndex[0].substr(1))+1
-      console.log(isolateIndex[0], typeof(isolateIndex[0]))
       const oldName = oldArrayToRename[i].name
       let oldPath = startOfPath + '/' + newFolderIndex + '#' + isolateIndex[1] + '/' + oldName
-      console.log(oldPath)
       const newItemIndex = i-1
       const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
       fsExtra.copySync(oldPath, newPath)
       fsExtra.rmSync(oldPath, { recursive: true })
+      if (openFolders.includes(oldPath)) {
+        for (let i = 0; i < newOpenFolders.length; i++) {
+          newOpenFolders[i] = newOpenFolders[i].replace(oldPath, newPath);
+        }
+      }
     } else {
       let oldPath = oldArrayToRename[i].path
-      console.log(oldPath)
       const newItemIndex = i-1
       const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
       fsExtra.copySync(oldPath, newPath)
       fsExtra.rmSync(oldPath, { recursive: true })
+      if (openFolders.includes(oldPath)) {
+        for (let i = 0; i < newOpenFolders.length; i++) {
+          newOpenFolders[i] = newOpenFolders[i].replace(oldPath, newPath);
+        }
+      }
     }
   }
+  console.log('newOpenFolders = ', newOpenFolders)
+  return newOpenFolders
+}
+
+function moveItemWithinFolder(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath, openFolders) {
+  console.log('openFolders= ',openFolders)
+  let newOpenFolders = openFolders
+  //move dagged item to a temp folder
+  fsExtra.copySync(droppedItem.path, projRootPath+'/.tmp/'+droppedItem.name)
+  fsExtra.rmSync(droppedItem.path, { recursive: true })
+  if (newIndex > oldIndex) {
+    const startIndex = oldIndex + 1 
+    const endIndex = newIndex
+    for (let i = startIndex; i <= endIndex; i++) {
+      const baseName = newArrayToRename[i].name.split('#')[1]
+      const oldPath = newArrayToRename[i].path
+      const newItemIndex = i-1
+      const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
+      fsExtra.copySync(oldPath, newPath)
+      fsExtra.rmSync(oldPath, { recursive: true })
+      if (openFolders.includes(oldPath)) {
+        for (let i = 0; i < newOpenFolders.length; i++) {
+          newOpenFolders[i] = newOpenFolders[i].replace(oldPath, newPath);
+        }
+      }
+    }
+  } else {
+    const startIndex = oldIndex - 1 
+    const endIndex = newIndex
+    for (let i = startIndex; i>=endIndex; i--) {
+      const baseName = newArrayToRename[i].name.split('#')[1]
+      const oldPath = newArrayToRename[i].path
+      const newItemIndex = i+1
+      const newPath = oldPath.substr(0, oldPath.lastIndexOf('/')) + '/' + newItemIndex + '#' + baseName
+      fsExtra.copySync(oldPath, newPath)
+      fsExtra.rmSync(oldPath, { recursive: true })
+      if (openFolders.includes(oldPath)) {
+        for (let i = 0; i < newOpenFolders.length; i++) {
+          newOpenFolders[i] = newOpenFolders[i].replace(oldPath, newPath);
+        }
+      }
+    }
+  }
+  // Rename the dragged item and place in the now-empty slot in the new location
+  const droppedItemBaseName = droppedItem.name.split('#')[1]
+  const droppedItemNewPath = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/')) + '/' + newIndex + '#' + droppedItemBaseName
+  fsExtra.copySync(projRootPath+'/.tmp/'+droppedItem.name, droppedItemNewPath)
+  fsExtra.rmSync(projRootPath+'/.tmp', { recursive: true })
+  console.log('newOpenFolders = ', newOpenFolders)
+  return newOpenFolders
 }
 
 
 
-ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, droppedUnder, projRootPath, files) => {
-  async function itemDropped( droppedItem, droppedOnItem, droppedUnder, projRootPath, files){
+ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, droppedUnder, projRootPath, files, openFolders) => {
+  async function itemDropped( droppedItem, droppedOnItem, droppedUnder, projRootPath, files, openFolders){
     const isProject = fs.existsSync(path.join(projRootPath, '.wrplat'))
     const newFolder = droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/'))
     const newFileList = fs.readdirSync(newFolder, { withFileTypes: true });
@@ -256,15 +296,21 @@ ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, dropped
     if (isProject) {
       //set different index for if the item was drop over or under (if dropped under, the item that was dropped on doesn't get renamed)
       if (droppedUnder) {
-        console.log(droppedItem.name, ' dropped under', droppedOnItem.name)
         const newIndex = parseInt(droppedOnItem.name.split('#')[0]) + 1
         const oldIndex = parseInt(droppedItem.name.split('#')[0])
-        console.log(newIndex, oldIndex)
-        moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath)
+        if (droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/')) === droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/'))) {
+          return moveItemWithinFolder(newArrayToRename, oldArrayToRename, newIndex-1, oldIndex, droppedItem, droppedOnItem, projRootPath, openFolders)
+        } else {
+          return moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath, openFolders)
+        }
       } else {
         const newIndex = parseInt(droppedOnItem.name.split('#')[0])
         const oldIndex = parseInt(droppedItem.name.split('#')[0])
-        moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath)
+        if (droppedItem.path.substr(0, droppedItem.path.lastIndexOf('/')) === droppedOnItem.path.substr(0, droppedOnItem.path.lastIndexOf('/'))) {
+          return moveItemWithinFolder(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath, openFolders)
+        } else {
+          return moveItem(newArrayToRename, oldArrayToRename, newIndex, oldIndex, droppedItem, droppedOnItem, projRootPath, openFolders)
+        }
       }
     } else {
       const originPath = droppedItem.path
@@ -287,8 +333,8 @@ ipcMain.handle('item-dropped', async (event, droppedItem, droppedOnItem, dropped
       console.log("This root folder is not a Writer's Plat project.", destinationFolder)
     }
   }
-  
-  const result = await itemDropped(droppedItem, droppedOnItem, droppedUnder, projRootPath, files)
+  const result = await itemDropped(droppedItem, droppedOnItem, droppedUnder, projRootPath, files, openFolders)
+  console.log('result = ', result)
   return result
   // movetoFolder(data, droppedItem, underItem)
 })
